@@ -178,7 +178,7 @@ export default function LightningZapCard({
           content: comment.trim() || "Value-4-Value Lightning Zap ⚡",
           tags: [
             ["p", hexPubkey],
-            ["relays", "wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"],
+            ["relays", "wss://relay.primal.net", "wss://nos.lol"],
             ["amount", amountMsats.toString()],
           ],
           created_at: Math.floor(Date.now() / 1000),
