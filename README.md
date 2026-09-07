@@ -199,6 +199,24 @@ User selects Sats ──► Request NUT-04 Quote ──► Settle via WebLN/QR �
 * **Zero-Buffer Client Engine:** Fully decoupled from Node.js `Buffer` globals using native browser `Uint8Array` primitives for zero-crash cross-browser reliability.
 * **Non-Blocking Resilience:** All network queries are wrapped with `AbortSignal.timeout()` and `Promise.race()` fallbacks to eliminate UI freezes.
 
+### 📂 Core Codebase Architecture Map
+
+A streamlined view focusing on key cryptographic, protocol, and real-time streaming implementations:
+
+```text
+nostr-pulse/
+├── src/
+│   ├── lib/
+│   │   ├── cashu.ts                 # RFC 8949 CBOR decoder & NIP-61 NutZap payment pipeline
+│   │   ├── trust-score.ts           # 5-Pillar reputation scoring engine & Anti-Sybil damping guard
+│   │   ├── nip05.ts                 # Cryptographic DNS record verification & NIP-05 identifier check
+│   │   └── nostr.ts                 # Singleton relay pool, NIP-19 decoders & connection timeout guards
+│   └── components/
+│       └── detail/
+│           ├── LiveZapFeed.tsx      # Real-time WebSocket client streaming Kind 9735 Zap receipts
+│           └── LightningZapCard.tsx # Dual-rail settlement card: Lightning (NIP-57) + Cashu (NIP-61)
+```
+
 ---
 
 ## ⚡ Quickstart & Local Setup
