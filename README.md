@@ -17,9 +17,9 @@
 
 <p align="center">
   <a href="https://nostrpulse.vercel.app/"><b>Explore Live Explorer »</b></a> •
-  <a href="https://nostrpulse.vercel.app//about"><b>Methodology</b></a> •
-  <a href="https://nostrpulse.vercel.app//relays"><b>Relay Telemetry</b></a> •
-  <a href="https://nostrpulse.vercel.app//compare"><b>Versus Engine</b></a>
+  <a href="https://nostrpulse.vercel.app/about"><b>Methodology</b></a> •
+  <a href="https://nostrpulse.vercel.app/relays"><b>Relay Telemetry</b></a> •
+  <a href="https://nostrpulse.vercel.app/compare"><b>Versus Engine</b></a>
 </p>
 
 </div>
@@ -209,28 +209,32 @@ User selects Sats ──► Request NUT-04 Quote ──► Settle via WebLN/QR �
 
 ### 1. Clone & Install
 ```bash
-git clone [https://github.com/PHONGUIT22/NostrPulse.git](https://github.com/PHONGUIT22/NostrPulse.git)
+git clone https://github.com/PHONGUIT22/NostrPulse.git
 cd NostrPulse
 npm install
-2. Run the Development Server
-Bash
+```
+
+### 2. Run the Development Server
+```bash
 npm run dev
-Open http://localhost:3000 in your browser to explore the live dashboard.
+```
 
-🗺️ Roadmap & Future Horizons
-[x] Phase 1: Deterministic 5-Pillar Trust Score Engine & Anti-Sybil Damping Guard.
+Open [http://localhost:3000](http://localhost:3000) in your browser to explore the live dashboard.
 
-[x] Phase 2: NIP-57 Lightning Zap integration with WebLN & live receipt streaming.
+---
 
-[x] Phase 3: NIP-61 NutZap dual-mode engine with NUT-00 V4 CBOR decoding & NIP-44 encryption.
+## 🗺️ Roadmap & Future Horizons
 
-[x] Phase 4: NIP-65 dynamic relay synchronization & browser WebSocket telemetry.
+* [x] **Phase 1:** Deterministic 5-Pillar Trust Score Engine & Anti-Sybil Damping Guard.
+* [x] **Phase 2:** NIP-57 Lightning Zap integration with WebLN & live receipt streaming.
+* [x] **Phase 3:** NIP-61 NutZap dual-mode engine with NUT-00 V4 CBOR decoding & NIP-44 encryption.
+* [x] **Phase 4:** NIP-65 dynamic relay synchronization & browser WebSocket telemetry.
+* [ ] **Phase 5:** NUT-11 (P2PK) locks for deterministic, recipient-locked eCash NutZaps.
+* [ ] **Phase 6:** NIP-90 (Data Vending Machines) for automated AI Agent reputation scoring and micro-payments.
+* [ ] **Phase 7:** Standalone `@nostrpulse/sdk` for seamless integration into third-party Nostr clients.
 
-[ ] Phase 5: NUT-11 (P2PK) locks for deterministic, recipient-locked eCash NutZaps.
+---
 
-[ ] Phase 6: NIP-90 (Data Vending Machines) for automated AI Agent reputation scoring and micro-payments.
+## ⚖️ License & Non-Custodial Disclaimer
 
-[ ] Phase 7: Standalone @nostrpulse/sdk for seamless integration into third-party Nostr clients.
-
-⚖️ License & Non-Custodial Disclaimer
-Distributed under the MIT License. NostrPulse is strictly non-custodial software: it never generates, stores, or requests user private keys (nsec), nor does it take custody of user funds.
+Distributed under the MIT License. NostrPulse is strictly non-custodial software: it never generates, stores, or requests user private keys (`nsec`), nor does it take custody of user funds.
