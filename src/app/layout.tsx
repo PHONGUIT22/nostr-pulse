@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -99,6 +100,18 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} bg-[#FDFDFD] text-slate-900 antialiased flex flex-col min-h-screen`}>
+        <Script id="nostr-error-guard" strategy="beforeInteractive">
+          {`
+            window.addEventListener('unhandledrejection', function(event) {
+              var reason = event.reason;
+              var msg = (reason && (reason.message || String(reason))) || '';
+              if (msg.indexOf('connection failure') !== -1 || msg.indexOf('timed out') !== -1) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+              }
+            }, true);
+          `}
+        </Script>
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
