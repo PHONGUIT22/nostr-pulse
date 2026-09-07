@@ -228,8 +228,8 @@ nostr-pulse/
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/PHONGUIT22/NostrPulse.git
-cd NostrPulse
+git clone https://github.com/PHONGUIT22/nostr-pulse.git
+cd nostr-pulse
 npm install
 ```
 
