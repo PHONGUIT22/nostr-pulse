@@ -5,12 +5,8 @@ import { FEATURED_CREATORS } from "@/lib/creators";
 
 // Top public Nostr relays for high-availability fallback
 export const DEFAULT_RELAYS = [
-  "wss://relay.damus.io",
-  "wss://nos.lol",
   "wss://relay.primal.net",
-  "wss://relay.nostr.band",
-  "wss://nostr.wine",
-  "wss://relay.snort.social"
+  "wss://nos.lol"
 ];
 
 export interface NostrProfile {
@@ -125,6 +121,27 @@ export function normalizeToHex(input: string): { hex: string; npub: string } {
   return { hex: clean, npub: clean };
 }
 
+let sharedNostrPool: SimplePool | null = null;
+export function getNostrPool(): SimplePool {
+  if (!sharedNostrPool) {
+    const pool = new SimplePool();
+    const origEnsureRelay = pool.ensureRelay.bind(pool);
+    pool.ensureRelay = function (url: string, params?: any) {
+      return origEnsureRelay(url, params).catch(() => {
+        return {
+          url,
+          connected: false,
+          subscribe: () => ({ close: () => {}, id: "dummy" }),
+          publish: () => Promise.resolve(""),
+          close: () => {},
+        } as any;
+      });
+    };
+    sharedNostrPool = pool;
+  }
+  return sharedNostrPool;
+}
+
 /**
  * 2. Fetches user's personal relay list (NIP-65 Kind 10002)
  */
@@ -132,7 +149,7 @@ export async function fetchUserRelays(pubkeyOrNpub: string): Promise<string[]> {
   const { hex: hexPubkey } = normalizeToHex(pubkeyOrNpub);
   if (!hexPubkey || !/^[0-9a-fA-F]{64}$/.test(hexPubkey)) return DEFAULT_RELAYS;
 
-  const pool = new SimplePool();
+  const pool = getNostrPool();
   try {
     const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 2500));
     
@@ -141,7 +158,7 @@ export async function fetchUserRelays(pubkeyOrNpub: string): Promise<string[]> {
       kinds: [10002],
       authors: [hexPubkey],
       limit: 1,
-    });
+    }).catch(() => []);
 
     const events = await Promise.race([queryPromise, timeoutPromise]);
 
@@ -161,127 +178,132 @@ export async function fetchUserRelays(pubkeyOrNpub: string): Promise<string[]> {
     }
   } catch (err) {
     console.warn("Failed to fetch NIP-65 relay list:", err);
-  } finally {
-    try {
-      pool.close(DEFAULT_RELAYS);
-    } catch {}
   }
 
   return DEFAULT_RELAYS;
 }
+
+const profileMemoryCache = new Map<string, Promise<NostrProfile | null>>();
 
 /**
  * 3. Fetches profile directly from Nostr WebSocket relay pool (P2P)
  */
 export async function fetchNostrProfile(npubOrHex: string, customRelays?: string[]): Promise<NostrProfile | null> {
   const { hex: hexPubkey, npub: encodedNpub } = normalizeToHex(npubOrHex);
-  const targetRelays = mergeRelays(customRelays, DEFAULT_RELAYS);
-  const pool = new SimplePool();
+  if (!hexPubkey) return null;
 
-  // --- Priority 1: Query all relays & get latest Kind 0 event ---
-  try {
-    const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 2500));
-
-    // Query all Kind 0 events across connected relays
-    const fetchPromise = pool.querySync(targetRelays, {
-      kinds: [0],
-      authors: [hexPubkey],
-    });
-
-    const events = await Promise.race([fetchPromise, timeoutPromise]);
-
-    if (Array.isArray(events) && events.length > 0) {
-      // Sort descending by created_at to always pick the newest record
-      const latestEvent = events.sort((a, b) => b.created_at - a.created_at)[0];
-
-      if (latestEvent && latestEvent.content) {
-        try {
-          const metadata = JSON.parse(latestEvent.content);
-          return {
-            pubkey: hexPubkey,
-            npub: encodedNpub,
-            name: metadata.name,
-            displayName: metadata.display_name || metadata.displayName || metadata.name,
-            about: metadata.about || metadata.bio,
-            picture: metadata.picture || metadata.image,
-            banner: metadata.banner,
-            nip05: metadata.nip05,
-            lud16: metadata.lud16 || metadata.lud06,
-            website: metadata.website,
-            created_at: latestEvent.created_at,
-            relays_connected: targetRelays.length,
-          };
-        } catch (parseErr) {
-          console.warn("Malformed JSON in kind:0 profile event:", parseErr);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("Relay pool query timed out, trying fallback cache...");
-  } finally {
-    try {
-      pool.close(targetRelays);
-    } catch {}
+  if (profileMemoryCache.has(hexPubkey)) {
+    return profileMemoryCache.get(hexPubkey)!;
   }
 
-  // --- Priority 2: Fallback from Primal API (cache disabled) ---
-  try {
-    const resPrimal = await fetch("https://primal.net/api", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(["user_profile", { pubkey: hexPubkey }]),
-      cache: "no-store", // Force fresh data fetch, no caching
-      signal: AbortSignal.timeout(2000),
-    });
+  const fetchPromise = (async (): Promise<NostrProfile | null> => {
+    const targetRelays = mergeRelays(customRelays, DEFAULT_RELAYS);
+    const pool = getNostrPool();
 
-    if (resPrimal.ok) {
-      const events = await resPrimal.json();
-      if (Array.isArray(events)) {
-        const kind0 = events.find((e: any) => e.kind === 0);
-        if (kind0 && kind0.content) {
+    // --- Priority 1: Query all relays & get latest Kind 0 event ---
+    try {
+      const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 2500));
+
+      // Query all Kind 0 events across connected relays
+      const queryPromise = pool.querySync(targetRelays, {
+        kinds: [0],
+        authors: [hexPubkey],
+      }).catch(() => []);
+
+      const events = await Promise.race([queryPromise, timeoutPromise]);
+
+      if (Array.isArray(events) && events.length > 0) {
+        // Sort descending by created_at to always pick the newest record
+        const latestEvent = events.sort((a, b) => b.created_at - a.created_at)[0];
+
+        if (latestEvent && latestEvent.content) {
           try {
-            const profile = JSON.parse(kind0.content);
+            const metadata = JSON.parse(latestEvent.content);
             return {
               pubkey: hexPubkey,
               npub: encodedNpub,
-              name: profile.name,
-              displayName: profile.display_name || profile.displayName || profile.name,
-              about: profile.about || profile.bio,
-              picture: profile.picture || profile.image,
-              banner: profile.banner,
-              nip05: profile.nip05,
-              lud16: profile.lud16 || profile.lud06,
-              website: profile.website,
-              created_at: kind0.created_at,
+              name: metadata.name,
+              displayName: metadata.display_name || metadata.displayName || metadata.name,
+              about: metadata.about || metadata.bio,
+              picture: metadata.picture || metadata.image,
+              banner: metadata.banner,
+              nip05: metadata.nip05,
+              lud16: metadata.lud16 || metadata.lud06,
+              website: metadata.website,
+              created_at: latestEvent.created_at,
               relays_connected: targetRelays.length,
             };
-          } catch {}
+          } catch (parseErr) {
+            console.warn("Malformed JSON in kind:0 profile event:", parseErr);
+          }
         }
       }
+    } catch (err) {
+      console.warn("Relay pool query timed out, trying fallback cache...");
     }
-  } catch {}
 
-  // --- Priority 3: Fallback to local cache list ---
-  const matched = FEATURED_CREATORS.find(
-    (c) => c.npub === encodedNpub || c.pubkey?.toLowerCase() === hexPubkey.toLowerCase()
-  );
+    // --- Priority 2: Fallback from Primal API (cache disabled) ---
+    try {
+      const resPrimal = await fetch("https://primal.net/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(["user_profile", { pubkey: hexPubkey }]),
+        cache: "no-store", // Force fresh data fetch, no caching
+        signal: AbortSignal.timeout(2000),
+      });
 
-  if (matched) {
-    return {
-      pubkey: matched.pubkey || hexPubkey,
-      npub: matched.npub || encodedNpub,
-      name: matched.handle,
-      displayName: matched.name,
-      about: matched.about || `Active Nostr builder and creator.`,
-      picture: matched.picture,
-      nip05: matched.nip05,
-      lud16: matched.lud16,
-      created_at: Math.floor(Date.now() / 1000) - 86400 * 400,
-      relays_connected: targetRelays.length,
-    };
-  }
+      if (resPrimal.ok) {
+        const events = await resPrimal.json();
+        if (Array.isArray(events)) {
+          const kind0 = events.find((e: any) => e.kind === 0);
+          if (kind0 && kind0.content) {
+            try {
+              const profile = JSON.parse(kind0.content);
+              return {
+                pubkey: hexPubkey,
+                npub: encodedNpub,
+                name: profile.name,
+                displayName: profile.display_name || profile.displayName || profile.name,
+                about: profile.about || profile.bio,
+                picture: profile.picture || profile.image,
+                banner: profile.banner,
+                nip05: profile.nip05,
+                lud16: profile.lud16 || profile.lud06,
+                website: profile.website,
+                created_at: kind0.created_at,
+                relays_connected: targetRelays.length,
+              };
+            } catch {}
+          }
+        }
+      }
+    } catch {}
 
-  return null;
+    // --- Priority 3: Fallback to local cache list ---
+    const matched = FEATURED_CREATORS.find(
+      (c) => c.npub === encodedNpub || c.pubkey?.toLowerCase() === hexPubkey.toLowerCase()
+    );
+
+    if (matched) {
+      return {
+        pubkey: matched.pubkey || hexPubkey,
+        npub: matched.npub || encodedNpub,
+        name: matched.handle,
+        displayName: matched.name,
+        about: matched.about || `Active Nostr builder and creator.`,
+        picture: matched.picture,
+        nip05: matched.nip05,
+        lud16: matched.lud16,
+        created_at: Math.floor(Date.now() / 1000) - 86400 * 400,
+        relays_connected: targetRelays.length,
+      };
+    }
+
+    return null;
+  })();
+
+  profileMemoryCache.set(hexPubkey, fetchPromise);
+  return fetchPromise;
 }
 
 /**
@@ -292,7 +314,7 @@ export async function fetchRecentNotes(npubOrHex: string, limit: number = 5, cus
   if (!hexPubkey || !/^[0-9a-fA-F]{64}$/.test(hexPubkey)) return [];
 
   const targetRelays = mergeRelays(customRelays, DEFAULT_RELAYS);
-  const pool = new SimplePool();
+  const pool = getNostrPool();
 
   try {
     const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 3500));
@@ -301,7 +323,7 @@ export async function fetchRecentNotes(npubOrHex: string, limit: number = 5, cus
       kinds: [1],
       authors: [hexPubkey],
       limit: limit * 2,
-    });
+    }).catch(() => []);
 
     const events = await Promise.race([queryPromise, timeoutPromise]);
 
@@ -320,9 +342,5 @@ export async function fetchRecentNotes(npubOrHex: string, limit: number = 5, cus
   } catch (err) {
     console.warn("Failed to fetch creator notes:", err);
     return [];
-  } finally {
-    try {
-      pool.close(targetRelays);
-    } catch {}
   }
 }
