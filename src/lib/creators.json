@@ -9,7 +9,7 @@
     "picture": "https://cdn.jb55.com/img/red-me.jpg",
     "about": "I made damus, npubs, and zaps ⚡️ \nIndependent bitcoin core and lightning dev.\nOwner of the oldest still running lightning node.\n💍nostr:npub1l0gxx3qq9ex5lpurnfmqhfdrx27xfgj24sx6kqmk3r8a5cne63zspx78fx",
     "nip05": "_@jb55.com",
-    "lud16": "jb55@sendsats.lol"
+    "lud16": "27150db61d655411@coinos.io"
   },
   {
     "name": "jack",
@@ -88,12 +88,12 @@
     "handle": "kukks",
     "npub": "npub1y24gz5gwucl79vtv4ctwpysl0r5m4xyzu2rgulnr44ks3t5mt92q4nz2ad",
     "pubkey": "22aa81510ee63fe2b16cae16e0921f78e9ba9882e2868e7e63ad6d08ae9b5954",
-    "score": 96,
-    "zapsReceived": "Active Node",
+    "score": 88,
+    "zapsReceived": "0 Sats",
     "picture": "https://m.primal.net/KxaQ.jpg",
     "about": "Building in the shadows for a better future.",
     "nip05": "kukks@kukks.org",
-    "lud16": "kukks@kukks.org"
+    "lud16": ""
   },
   {
     "name": "Change this if you want",
@@ -126,7 +126,7 @@
     "pubkey": "3f770d65d3a764a9c5cb503ae123e62ec7598ad035d836e2a810f3877a745b24",
     "score": 96,
     "zapsReceived": "Active Node",
-    "picture": "https://blossom.primal.net/3f927e368163cac6235966ce0507324e143270d95c9569e6d65edf070e0da409.jpg",
+    "picture": "https://blossom.ditto.pub/97f68a8225af2ed04d36f934a10c265a0cf8b1e9985506973f4a2fdf1e205f0c.jpeg",
     "about": "The purple pill helps the orange pill go down. \n\nDeveloper Relations at Soapbox.\n\n🪺 NostrNests.com\n🎙️ YakBak.app \n🖼️ Zappix.app\n🗓️ Plektos.app\n🎶 ZapTrax.app\n📈 Zaplytics.app\n🎧 Podstr.org",
     "nip05": "derekross@grownostr.org",
     "lud16": "derekross@strike.me"

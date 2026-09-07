@@ -34,10 +34,8 @@ const RAW_NPUBS = [
 ];
 
 const RELAYS = [
-  "wss://relay.damus.io",
-  "wss://nos.lol",
   "wss://relay.primal.net",
-  "wss://relay.nostr.band"
+  "wss://nos.lol"
 ];
 
 // Verifies if Lightning endpoint (lud16) returns a valid callback

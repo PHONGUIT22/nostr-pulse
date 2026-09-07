@@ -98,13 +98,14 @@ NostrPulse calculates an objective 0–100 point reputation index directly from 
 
 A unified micro-transaction interface switching effortlessly between real-time and offline settlement rails:
 
+```text
 [ 1-Click In-App Minting & NutZap Pipeline ]
 User selects Sats ──► Request NUT-04 Quote ──► Settle via WebLN/QR ──► Poll Mint & Claim Proofs ──► Encrypt NIP-44 ──► Broadcast Kind 9321
-
+```
 
 * **100% Asynchronous NutZaps (NIP-61):** Tippers can send Chaumian eCash to creators even when the creator's Lightning node is completely offline.
-* **Front-Running Defense (NIP-44 v2 Encryption):** Bearer tokens inside `Kind 9321` events are encrypted with the recipient's public key. Relay operators and scrapers cannot steal token proofs in transit.
-* **Native NUT-00 V4 CBOR Decoding:** Includes a zero-dependency binary parser compliant with RFC 8949, reading both legacy `cashuA` (JSON Base64) and next-gen `cashuB` (CBOR) tokens.
+* **Zero-Dependency RFC 8949 CBOR Decoder (Supply-Chain Immune):** Next-gen `cashuB` tokens use binary CBOR encoding per NUT-00. Rather than importing bloated third-party npm CBOR libraries that introduce supply-chain attack vectors, NostrPulse incorporates a hand-crafted, pure TypeScript CBOR decoder built entirely from scratch using raw `Uint8Array` byte operations and bitwise arithmetic (`hi * 2**32 + lo`, major types `0..7`). It operates with zero npm dependencies, completely eliminating supply-chain vulnerabilities.
+* **Front-Running Defense & MEV Neutralization (NIP-44 v2 Encryption):** Cashu tokens are cryptographic **bearer assets** — possession of the secret token proofs equals unconditional ownership of the funds. If an eCash token were broadcast unencrypted across public Nostr relays, malicious relay operators, scrapers, or MEV-style mempool bots would intercept and redeem the proofs at the mint before the creator ever receives them. NostrPulse solves this by enforcing **NIP-44 v2 Diffie-Hellman payload encryption** on all `Kind 9321` NutZaps. The bearer proofs are encrypted directly with the recipient's public key, guaranteeing that only the creator possessing the corresponding private key can decrypt and claim the eCash proofs.
 * **Dynamic Mint Router:** Switch on the fly between **Minibits**, **Macadamia**, **Cashu Testnut**, or any self-hosted Mint endpoint.
 
 ---
@@ -232,7 +233,13 @@ cd NostrPulse
 npm install
 ```
 
-### 2. Run the Development Server
+### 2. Live Relay Crawler Test (Reproducibility & Verification)
+Verify that creator metadata, NIP-05 DNS records, and Lightning addresses are live-crawled directly from decentralized Nostr relays rather than hardcoded:
+```bash
+node src/scripts/enrich-creators.mjs
+```
+
+### 3. Run the Development Server
 ```bash
 npm run dev
 ```
@@ -250,6 +257,16 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to explore t
 * [ ] **Phase 5:** NUT-11 (P2PK) locks for deterministic, recipient-locked eCash NutZaps.
 * [ ] **Phase 6:** NIP-90 (Data Vending Machines) for automated AI Agent reputation scoring and micro-payments.
 * [ ] **Phase 7:** Standalone `@nostrpulse/sdk` for seamless integration into third-party Nostr clients.
+
+---
+
+## 🛡️ Privacy & Zero-Surveillance Audit
+
+Built strictly in accordance with Cypherpunk values and the Free and Open Source Software (FOSS) ethos:
+
+* **Zero Tracking & No Third-Party Telemetry:** Absolutely no Google Analytics, no session recorders, no tracking cookies, and no telemetry beacons transmitting user behavior to third-party surveillance servers.
+* **100% Client-Side In-Browser Execution:** All 5-Pillar Trust Score evaluations, RFC 8949 binary CBOR decoding, and token parsing happen purely inside the user's browser runtime (Local in-browser evaluation). No centralized backends process or log your queries.
+* **Non-Custodial Key Security:** NostrPulse **never** asks for, touches, or stores private keys (`nsec`). All event signing and cryptographic operations are delegated exclusively to local browser extension signers via the **NIP-07** protocol standard (`window.nostr`).
 
 ---
 
