@@ -45,8 +45,18 @@ export default function LiveZapFeed({ pubkey, name }: Props) {
         if (saved) loggedUserRelays = JSON.parse(saved);
       } catch {}
 
-      // 3. Deduplicate and select optimal 4-6 relays
-      const mergedList = mergeRelays([...creatorRelays, ...loggedUserRelays], DEFAULT_RELAYS).slice(0, 6);
+      // 3. Deduplicate and select optimal relays strictly from DEFAULT_RELAYS, ignoring dead relays
+      const deadRelayKeywords = ["damus.io", "nostr.wine", "snort.social"];
+      const mergedList = mergeRelays(
+        [...creatorRelays, ...loggedUserRelays].filter(
+          (r) => DEFAULT_RELAYS.includes(r) && !deadRelayKeywords.some((d) => r.includes(d))
+        ),
+        DEFAULT_RELAYS
+      )
+        .filter(
+          (r) => DEFAULT_RELAYS.includes(r) && !deadRelayKeywords.some((d) => r.includes(d))
+        )
+        .slice(0, 6);
       
       if (!isMounted) return;
       setTotalRelaysCount(mergedList.length);
@@ -136,13 +146,35 @@ export default function LiveZapFeed({ pubkey, name }: Props) {
             } catch {}
           };
 
-          ws.onerror = () => {
+          ws.onerror = (err: any) => {
+            try {
+              if (err && typeof err.preventDefault === "function") {
+                err.preventDefault();
+              }
+              if (err && typeof err.stopPropagation === "function") {
+                err.stopPropagation();
+              }
+              if (err && typeof err.stopImmediatePropagation === "function") {
+                err.stopImmediatePropagation();
+              }
+            } catch {}
             if (!isMounted) return;
             activeSockets = Math.max(0, activeSockets - 1);
             setConnectedCount(activeSockets);
           };
 
-          ws.onclose = () => {
+          ws.onclose = (event: any) => {
+            try {
+              if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+              }
+              if (event && typeof event.stopPropagation === "function") {
+                event.stopPropagation();
+              }
+              if (event && typeof event.stopImmediatePropagation === "function") {
+                event.stopImmediatePropagation();
+              }
+            } catch {}
             if (!isMounted) return;
             activeSockets = Math.max(0, activeSockets - 1);
             setConnectedCount(activeSockets);
