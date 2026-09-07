@@ -1,0 +1,6 @@
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, s-maxage=31536000, must-revalidate"
+    CDN-Cache-Control = "public, s-maxage=31536000, must-revalidate"
+    Netlify-CDN-Cache-Control = "public, s-maxage=31536000, must-revalidate"
