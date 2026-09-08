@@ -26,6 +26,27 @@
 
 ---
 
+## 🧪 Quick Evaluation Guide for Judges (Live Interactive Demo)
+
+To evaluate **NostrPulse** without spending real Bitcoin or installing browser extensions, test the next-generation **NUT-00 V4 CBOR eCash (`cashuB`)** pipeline using our live Testnet mint:
+
+1. Visit **[Jack's Profile](https://nostrpulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)**.
+2. In the **Support jack** card, switch to **Cashu eCash (NIP-61)** ➔ **Paste Token**.
+3. Ensure the target mint is set to **Cashu Testnut (Demo / Test Sats)**.
+4. Copy and paste this live **NUT-00 V4 CBOR Token (21 Sats)** into the token box:
+
+```text
+cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcIOkYWEQYXN4QDIyZmM3YWNjMDllZWJlOWNiNjRhMDk3MTQ5MTViYTQ0NDExMDZkM2NlNmQ4YjJkM2FhOWIyNjA0ODY4NzdkYzhhY1ghA1CebGtQCkyvj97TNc6SKjnUepmelsxulOTl5LWm795AYWSjYWVYIFyb9BEKNmcAGJPYyEjYpUrPxdOMVtWCEBWbQxQWhRNGYXNYIIf6SixhZJg6h-BzUsLKyO7p18Zh-hEC-me3JwDhwof0YXJYIKMKKQEkzzMqZQ-JiPYo1VNc9N_AtHixGCNUgk1a429dpGFhBGFzeEA3NzU2NTE0Njg1MDliMDAwOWYxZjRmYzJiYTdmMGZkZjU0YTJlMWI0MDdkODA4ZDljOTZjNTUyNzczODkwYjVkYWNYIQOSWDT_Ur5wOlJMruf0RKnjV5MW4pzeDKp6eUkwRCiUeGFko2FlWCDhkwEj3Ck0gHrJ_R9Ur84Wvi-ls5a7aoFmKojvA3n53GFzWCBrhNbOgQV9ZmOhkb-_2m_BF-sYApUqUrLNSskW4aP1LmFyWCBCP8XkPVN6n8VPMU7UYGcqR4n_lzsmui5T6xxyy9RHL6RhYQFhc3hAYTgzZGU5OTUyMjJjNmQwNThjYTY0ZjI0MGQxNzk1ZjRiZmFiYTMzMDQyMzkxN2RhMTZmNTJjZjJjNTNjNDQwN2FjWCED58b_wlPN8ombHrjJ7nBjxDGnBZw95NmoZbv0JGq0qEZhZKNhZVggBG6UlWOjPrz0BD7uKygbu24fJx9l_tNMUERho0yLxYVhc1ggMZfbVxdLa775b3VnME__GN8PGqQbqdoU0Ycm4mdehXlhclggu1x5J55-wpi0LWELGtH5_jIjo2nmLV6_OE2cyTpUqKg
+```
+
+5. Click **Verify eCash Token** (our custom client-side RFC 8949 decoder decodes the binary CBOR map and verifies proof state against the mint).
+6. Click **Send Sats (NutZap)**: The token is encrypted end-to-end via NIP-44 v2 and broadcasted directly to open relays as a Kind 9321 event.
+
+> [!NOTE]
+> Cashu proofs are bearer assets. If previous evaluators have already claimed this token, you can also use **1-Click Mint & Send** with any Testnet Lightning wallet.
+
+---
+
 ## 🌐 The Problem & The Freedom Solution
 
 Open protocols like Nostr eliminate centralized deplatforming, but introduce two structural vulnerabilities:
@@ -60,8 +81,8 @@ Open protocols like Nostr eliminate centralized deplatforming, but introduce two
     </td>
     <td>
       • <b>5-Pillar Metric Scoring</b> (0–100 pts)<br>
-      • <b>Social Graph WoT</b> & seed distance analysis<br>
-      • <b>Anti-Sybil Damping Guard:</b> Strict 44-pt cap for unverified keys<br>
+      • <b>Core Network Proximity</b> & seed distance analysis<br>
+      • <b>Anti-Sybil Damping Guard:</b> Strict 42-pt cap for unverified keys<br>
       • <b>Real-time Live Telemetry</b>
     </td>
     <td>
@@ -84,13 +105,13 @@ NostrPulse calculates an objective 0–100 point reputation index directly from 
 | Pillar | Verification Signal | Max Points |
 | :--- | :--- | :---: |
 | **Pillar 1** | **NIP-05 Cryptographic DNS Binding:** Validates `.well-known/nostr.json` against the public key (Bonus for custom sovereign domains). | **25 pts** |
-| **Pillar 2** | **Web-of-Trust (WoT) Graph Connectivity:** Evaluates proximity to verified protocol seed keys (`jack`, `fiatjaf`, `jb55`, `odell`, etc.). | **25 pts** |
+| **Pillar 2** | **Core Network Proximity & Graph Signal:** Evaluates proximity to verified protocol seed keys and dynamic relay diversity across NIP-65 lists. | **25 pts** |
 | **Pillar 3** | **Lightning V4V Endpoint:** Verifies live LNURL-pay / `lud16` address and Lightning callback response. | **20 pts** |
 | **Pillar 4** | **Keypair Longevity & Multi-Relay Depth:** Assesses age of keypair and replication count across global relays. | **15 pts** |
 | **Pillar 5** | **Metadata Richness & Authenticity:** Verifies complete avatar, bio, and valid external domain presence. | **15 pts** |
 
 > [!IMPORTANT]
-> **Anti-Sybil Damping Guard:** If an account lacks verified NIP-05 DNS signatures **AND** has an isolated Web-of-Trust graph, its score is **strictly capped at 44 (Tier: Unverified / Potential Bot)**. This permanently neutralizes automated bots that populate fake metadata profiles.
+> **Anti-Sybil Damping Guard:** If an account lacks verified NIP-05 DNS signatures **AND** has an isolated Web-of-Trust graph, its score is **strictly capped at 42 (Tier: Unverified / Potential Bot)**. This permanently neutralizes automated bots that populate fake metadata profiles.
 
 ---
 
@@ -122,6 +143,15 @@ User selects Sats ──► Request NUT-04 Quote ──► Settle via WebLN/QR �
 
 * **Versus Arena:** Side-by-side metric comparison between any two Nostr profiles (`npub` vs `npub`) across Trust Scores, Lightning capability, and metadata.
 * **Embeddable Trust Badges:** Dynamic SVG badges (`/api/badge/[npub]`) ready to embed in GitHub READMEs, blogs, and personal portfolios.
+
+---
+
+### 5. 📡 Dual Network Engine (Pure P2P vs. Accelerated Edge Cache)
+
+> **📡 Dual Network Engine (Pure P2P vs. Accelerated Edge Cache):** Users can toggle between **Fast Cache** (accelerated via edge indexer) and **Pure P2P Mode** (100% direct browser-to-relay WebSocket connections via `SimplePool`, bypassing all centralized backend APIs).
+
+* **Unstoppable Decentralization:** Proves that NostrPulse does not hard-depend on any centralized indexer. In Pure P2P mode, all metadata (Kind 0), notes (Kind 1), and zap receipts (Kind 9735) query strictly through direct WebSockets via `SimplePool` to `DEFAULT_RELAYS`.
+* **Sleek UI Toggle with Real-Time Feedback:** Accessible directly from the header navbar, featuring live state indicators (⚡ Fast Cache vs. 🛡️ Pure P2P with active ping pulse) and instant switch notifications.
 
 ---
 
@@ -211,8 +241,11 @@ nostr-pulse/
 │   │   ├── cashu.ts                 # RFC 8949 CBOR decoder & NIP-61 NutZap payment pipeline
 │   │   ├── trust-score.ts           # 5-Pillar reputation scoring engine & Anti-Sybil damping guard
 │   │   ├── nip05.ts                 # Cryptographic DNS record verification & NIP-05 identifier check
+│   │   ├── network-mode.ts          # Dual-network state manager (Fast Edge Cache vs. Pure P2P)
 │   │   └── nostr.ts                 # Singleton relay pool, NIP-19 decoders & connection timeout guards
 │   └── components/
+│       ├── layout/
+│       │   └── NetworkModeToggle.tsx# Real-time P2P vs. Edge Cache mode switcher with live telemetry
 │       └── detail/
 │           ├── LiveZapFeed.tsx      # Real-time WebSocket client streaming Kind 9735 Zap receipts
 │           └── LightningZapCard.tsx # Dual-rail settlement card: Lightning (NIP-57) + Cashu (NIP-61)
