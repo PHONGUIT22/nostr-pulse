@@ -815,55 +815,88 @@ export async function claimNutZapToken(
     const parsed = parseCashuToken(tokenString);
     let cleanMint = (mintUrl || parsed.mint || DEFAULT_CASHU_MINT).trim().replace(/\/+$/, "");
     if (!cleanMint.startsWith("http://") && !cleanMint.startsWith("https://")) {
-      cleanMint = "https://" + cleanMint;
+      cleanMint = `https://${cleanMint}`;
     }
 
-    const wallet = new Wallet(cleanMint);
-    
-    // Ensure keys and mint info are loaded
+    const normalizedUnit = (parsed.unit || "sat").toLowerCase().trim();
+    const wallet = new Wallet(cleanMint, { unit: normalizedUnit });
+
+    // 1. Load mint metadata
     try {
       if (typeof (wallet as any).loadMint === "function") {
-        await (wallet as any).loadMint();
+        await (wallet as any).loadMint(true);
       }
-      if (typeof (wallet as any).getKeys === "function") {
-        await (wallet as any).getKeys();
-      }
-    } catch (e) {
-      console.warn("Mint keys load warning:", e);
+    } catch (loadErr) {
+      console.warn("[claimNutZapToken] loadMint warning:", loadErr);
     }
 
-    const activeMintUrl = (wallet as any).mint?.mintUrl || cleanMint;
+    // 2. Query all active Keyset IDs directly from Mint to resolve truncated IDs
+    let mintKeysetIds: string[] = [];
+    try {
+      const res = await fetch(`${cleanMint}/v1/keysets`, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.keysets)) {
+          mintKeysetIds = data.keysets.map((k: any) => k.id);
+        }
+      }
+    } catch (err) {
+      console.warn("[claimNutZapToken] Direct keysets fetch failed, trying wallet cache:", err);
+      mintKeysetIds = (wallet as any).keyChain?.cache?.keysets?.map((k: any) => k.id) || [];
+    }
 
-    // Construct canonical Token object with matching mint URL to avoid slash mismatch
-    const tokenObj = {
-      token: [
-        {
-          mint: activeMintUrl,
-          proofs: parsed.proofs,
-        },
-      ],
-      unit: parsed.unit || "sat",
+    // 3. Auto-expand truncated 16-hex Keyset ID (NUT-00 CBOR) to full 66-hex Keyset ID
+    const normalizedProofs = parsed.proofs.map((proof: any) => {
+      const rawId = String(proof.id);
+      const fullMatch = mintKeysetIds.find((fullId) => fullId === rawId || fullId.startsWith(rawId));
+      if (fullMatch && fullMatch !== rawId) {
+        return { ...proof, id: fullMatch };
+      }
+      return proof;
+    });
+
+    // 4. Ensure wallet has loaded the keys for these keysets
+    if (typeof (wallet as any).ensureOperableKeysets === "function") {
+      const targetKeysets = Array.from(new Set(normalizedProofs.map((p: any) => p.id)));
+      await (wallet as any).ensureOperableKeysets(targetKeysets).catch(() => {});
+    }
+
+    // 5. Construct canonical flat Token object (Cashu-TS v4 structure)
+    const canonicalFlatToken = {
+      mint: cleanMint,
+      proofs: normalizedProofs,
+      unit: normalizedUnit,
     };
+
+    // Also encode a canonical token string containing full keyset IDs as fallback
+    const canonicalTokenString = encodeCashuToken(cleanMint, normalizedProofs, normalizedUnit);
 
     let claimedProofs: any[] = [];
 
-    if (typeof (wallet as any).receive === "function") {
+    // Priority 1: wallet.receive(canonicalFlatToken)
+    try {
+      const res = await (wallet as any).receive(canonicalFlatToken);
+      if (Array.isArray(res)) {
+        claimedProofs = res;
+      } else if (res && Array.isArray(res.proofs)) {
+        claimedProofs = res.proofs;
+      }
+    } catch (flatErr) {
+      console.warn("[claimNutZapToken] receive(canonicalFlatToken) failed, trying canonicalTokenString:", flatErr);
+      // Priority 2: wallet.receive(canonicalTokenString)
       try {
-        // Priority 1: Receive using canonical tokenObj
-        const res = await (wallet as any).receive(tokenObj);
-        if (Array.isArray(res)) {
-          claimedProofs = res;
-        } else if (res && Array.isArray(res.proofs)) {
-          claimedProofs = res.proofs;
+        const res2 = await (wallet as any).receive(canonicalTokenString);
+        if (Array.isArray(res2)) {
+          claimedProofs = res2;
+        } else if (res2 && Array.isArray(res2.proofs)) {
+          claimedProofs = res2.proofs;
         }
-      } catch (tokenObjErr) {
-        console.warn("wallet.receive(tokenObj) failed, trying raw tokenString fallback:", tokenObjErr);
-        // Priority 2: Fallback to raw token string
-        const res = await (wallet as any).receive(tokenString);
-        if (Array.isArray(res)) {
-          claimedProofs = res;
-        } else if (res && Array.isArray(res.proofs)) {
-          claimedProofs = res.proofs;
+      } catch (strErr) {
+        // Priority 3: wallet.ops.receive(normalizedProofs).run()
+        if ((wallet as any).ops && typeof (wallet as any).ops.receive === "function") {
+          claimedProofs = await (wallet as any).ops.receive(normalizedProofs).run();
+        } else {
+          throw strErr;
         }
       }
     }
@@ -873,8 +906,8 @@ export async function claimNutZapToken(
       : parsed.totalAmountSats;
 
     const newToken = claimedProofs.length > 0
-      ? encodeCashuToken(cleanMint, claimedProofs)
-      : tokenString;
+      ? encodeCashuToken(cleanMint, claimedProofs, normalizedUnit)
+      : canonicalTokenString;
 
     return {
       success: true,
@@ -883,7 +916,7 @@ export async function claimNutZapToken(
       newToken,
     };
   } catch (err: any) {
-    console.error("claimNutZapToken error:", err);
+    console.error("[claimNutZapToken] claim error:", err);
     return {
       success: false,
       amountSats: 0,
