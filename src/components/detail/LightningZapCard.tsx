@@ -17,7 +17,8 @@ import {
   Server,
   Settings2,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  RefreshCw
 } from "lucide-react";
 import { generateSecretKey, finalizeEvent } from "nostr-tools/pure";
 import { nip19 } from "nostr-tools";
@@ -42,7 +43,11 @@ interface ZapCardProps {
 
 const PRESET_AMOUNTS = [21, 100, 500, 1000, 5000, 21000];
 
-const DEMO_CASHU_TOKEN = "cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcIOkYWEQYXN4QDIyZmM3YWNjMDllZWJlOWNiNjRhMDk3MTQ5MTViYTQ0NDExMDZkM2NlNmQ4YjJkM2FhOWIyNjA0ODY4NzdkYzhhY1ghA1CebGtQCkyvj97TNc6SKjnUepmelsxulOTl5LWm795AYWSjYWVYIFyb9BEKNmcAGJPYyEjYpUrPxdOMVtWCEBWbQxQWhRNGYXNYIIf6SixhZJg6h-BzUsLKyO7p18Zh-hEC-me3JwDhwof0YXJYIKMKKQEkzzMqZQ-JiPYo1VNc9N_AtHixGCNUgk1a429dpGFhBGFzeEA3NzU2NTE0Njg1MDliMDAwOWYxZjRmYzJiYTdmMGZkZjU0YTJlMWI0MDdkODA4ZDljOTZjNTUyNzczODkwYjVkYWNYIQOSWDT_Ur5wOlJMruf0RKnjV5MW4pzeDKp6eUkwRC-uXGFkpGFlWCBXULcGi-G2tlZHxOXZ4FS_7K0LNzSB5HKV2KAbD7qTjmFzWCDlQ7h3vKcXkQd83CaEqbqRxnkFDuXUKKjcWTFuoHG7K2FyWCDvJr0-w1Mk3IfHngjAPHVwAOlY-lkgKjefCaqYsN2p52FjWCECoxaXZzwP2dFrBPq8n8lCVccFh_xaNrGk-cCQvqDqwcI";
+const DEMO_TOKEN_POOL = [
+  "cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcIKkYWEIYXN4QGQ1ZWU5OTgxZDQyYjcyZGY0ODExOGIyZGQzY2U5NDFlMzM1OGJhMzFkOGNjODk2NTM5NTYxOTA1NDhmMmFhYWNhY1ghAgzMNccmicvSfdAQtkAtFTDQT1HkUyPxgC5YsajwYDzCYWSjYWVYIOviohOvKzAkGcWKIWMTfOkAvwRfGNCJtZkeoSTMC_sMYXNYIKgtBFq42ONU5vpxpOeVwlh8D20rywd0m_xJnVlmN0ZQYXJYIIzPppLxzX-UjxVXC2SptkAluA8h-h0v9XtCGuM0fOjcpGFhAmFzeEBhZjhjZTUzMjA2NDNjYjc4MmExMjFhNzY0NDBhODY2ODA4YjllMWZiYzBlNWNjYWI4NGJiMTU4MjIwNTE4ZTkyYWNYIQKJh9GDIR4d27VG99Em7_UP2uqYG5Ih-BKikcT8tXmV_WFko2FlWCDU_c9F09zYKK6MeZG8nIXybQDIkbLjd3HzUIPiRkSeNmFzWCAevl8x1IS8j0iidgLaWCXLm87xyQRjmVVyOSHcfUxemWFyWCCyVVlvivQlrMd-rjXGodSYFSa_waEM-C7XdE9nTt-Pnw",
+  "cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcIKkYWEIYXN4QDI4YWVkNDY0MjRjMzAwYzU5Nzc1YTIzZmI4Zjg0NzBjM2ZmMzE2MWI2ZTQwMjA0OWRjZWZkM2U3ZmE4N2Y4ODNhY1ghAyL1oTdQViWi8-JfkJ2YQ_1JVH59YbvTUsONKWODhmtHYWSjYWVYIOvINL8NMQoyswRFC1Ip49izSK-ClcweYeRaiIPbjFxDYXNYICqDWWMsHXWNwvo1iPO0PHODZfSLO0ZSOH7wQ-fjsumVYXJYIMERZRjnrTI38GYlR48sIKVGPNgliZVlcs5V5RhfaAg3pGFhAmFzeEBjZDU0N2E1YWFkM2YzZjI0NjFhNjVlZTg3MjYzOTQxYjVkZWU1NDU3ZWVjMmYyZWIxZTZmOTE4NTczNmRkODk3YWNYIQP5G7anaEZba5C7GY7-ddL51JLOa2TO9kf4xsiw7gY9Z2Fko2FlWCDRa4xkkvwxnXN_IPsGotWHwiC78izwM2S_knygKFtDBmFzWCBFD_VFKe7TU0kin_qrHIHRPaFd02RgYsDFSYvH9c_2_2FyWCDuOf4dLEF7itj6wBNoaFmiAE2zw-l1i7QgU8RJJNJ80w",
+  "cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcIKkYWEIYXN4QDU2MmZiZmJlMDY1MDRjY2Q3Y2M4NjgyNTNhNmFiM2U2MzY4ZjhjNDJjMjg3OGVhNzVkODkzYjUxMWI3ZWVmYzdhY1ghAlSuOoe5AePLgyz9gDZu8f5AgE8S-51iTKUK6glNvm_RYWSjYWVYIKbisyxfiLd9L_dvXkOh9xYO8bfZJm9UUoh566VBMTFPYXNYICQYpUmYAEZBmDqihqmdaMboKncbJoQ6ncxhDRSCthcEYXJYIOoApmCLFuGjcjIBCWulINkQeXO9vi9g434-ro-BaUk7pGFhAmFzeEBiODUwNGM1NzUwYzI0ZDNmZTE4NjQ1YjJiYTZmYjA1YzUzMDEyMzE0ZThjN2VhZDg0MjQzN2QzZDAxZjg0MmJiYWNYIQNie1t-LaPgeHEKo1fpYdpsm4v-Tn0xwDEt3cOuPrP59WFko2FlWCD-gEoN0geOXg6JfJQaOqCGITKjnZ4QTPYuFxjwb4qcTWFzWCBxHvDbF6eHtp1ue4-FCakZXI8IlgT-2fz0DqvpHfzgpWFyWCAZKe1GJeL77dYjX0wWqbEWSZwSds5Y5NpDKpeUkulRwA"
+];
 
 function resolveCandidateEndpoints(lud16: string | undefined, defaultHandle: string): { endpoint: string; rawAddress: string }[] {
   const list: { endpoint: string; rawAddress: string }[] = [];
@@ -103,6 +108,7 @@ export default function LightningZapCard({
   const [verifiedCashuAmount, setVerifiedCashuAmount] = useState<number | null>(null);
   const [verifiedMintUrl, setVerifiedMintUrl] = useState<string>("");
   const [isTokenSpent, setIsTokenSpent] = useState<boolean>(false);
+  const [tokenPoolIndex, setTokenPoolIndex] = useState<number>(0);
 
   const cleanHandle = name.toLowerCase().replace(/[^a-z0-9_]/g, "") || "creator";
   const recipientPubkey = pubkey || npub;
@@ -340,8 +346,9 @@ export default function LightningZapCard({
   // ----------------------------------------------------
   // 3. CASHU: Paste existing token
   // ----------------------------------------------------
-  const handleVerifyCashuToken = async () => {
-    if (!cashuTokenInput.trim()) return;
+  const handleVerifyCashuToken = async (overrideToken?: string) => {
+    const token = (overrideToken || cashuTokenInput).trim();
+    if (!token) return;
 
     setIsProcessing(true);
     setStatus("idle");
@@ -349,8 +356,8 @@ export default function LightningZapCard({
     setIsTokenSpent(false);
 
     try {
-      const parsed = parseCashuToken(cashuTokenInput);
-      const mintVerification = await verifyTokenWithMint(cashuTokenInput);
+      const parsed = parseCashuToken(token);
+      const mintVerification = await verifyTokenWithMint(token);
 
       if (!mintVerification.isValid) {
         const reason = mintVerification.reason || "Token is already spent or invalid.";
@@ -377,6 +384,17 @@ export default function LightningZapCard({
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleAutoFillAndRotate = () => {
+    const currentToken = DEMO_TOKEN_POOL[tokenPoolIndex];
+    setCashuTokenInput(currentToken);
+    setVerifiedCashuAmount(null);
+    setIsTokenSpent(false);
+    setStatus("idle");
+    setStatusMessage("");
+    setTokenPoolIndex((tokenPoolIndex + 1) % DEMO_TOKEN_POOL.length);
+    handleVerifyCashuToken(currentToken);
   };
 
   const handleSendPastedCashuNutZap = async (e: React.FormEvent) => {
@@ -827,20 +845,12 @@ export default function LightningZapCard({
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setCashuTokenInput(DEMO_CASHU_TOKEN);
-                      setVerifiedCashuAmount(null);
-                      setIsTokenSpent(false);
-                      if (status === "error") {
-                        setStatus("idle");
-                        setStatusMessage("");
-                      }
-                    }}
+                    onClick={handleAutoFillAndRotate}
                     className="mb-2 px-3 py-1.5 bg-amber-950/60 hover:bg-amber-900/60 border border-amber-700/60 text-amber-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                    title="Fill textarea with a testnet 21 sat Cashu token for quick testing"
+                    title="Fill textarea with a testnet demo token from rotating pool and verify"
                   >
                     <Zap className="w-3.5 h-3.5" />
-                    <span>Auto-fill Demo Token (21 sats)</span>
+                    <span>⚡ Auto-fill Demo Token ({tokenPoolIndex + 1}/{DEMO_TOKEN_POOL.length})</span>
                   </button>
                   <textarea
                     rows={3}
@@ -885,6 +895,19 @@ export default function LightningZapCard({
                       </span>
                     </div>
 
+                    {/* Quick Rotate to Next Demo Token Button */}
+                    <div className="pt-0.5">
+                      <button
+                        type="button"
+                        onClick={handleAutoFillAndRotate}
+                        className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        title="Rotate to next demo token in pool"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>⚡ Rotate to Next Demo Token ↻</span>
+                      </button>
+                    </div>
+
                     <p className="text-xs text-slate-300 leading-relaxed font-normal">
                       This bearer token has already been claimed and permanently invalidated by the Mint. Under Chaumian eCash protocol rules, each proof secret can only be redeemed once to eliminate double-spending.
                     </p>
@@ -925,7 +948,7 @@ export default function LightningZapCard({
                   {!verifiedCashuAmount ? (
                     <button
                       type="button"
-                      onClick={handleVerifyCashuToken}
+                      onClick={() => handleVerifyCashuToken()}
                       disabled={isProcessing || !cashuTokenInput.trim() || isTokenSpent}
                       className={`w-full font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm border ${
                         isTokenSpent
