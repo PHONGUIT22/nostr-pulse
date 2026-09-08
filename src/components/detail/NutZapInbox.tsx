@@ -404,24 +404,36 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                     )}
 
                     {!isDec ? (
-                      <button
-                        type="button"
-                        onClick={() => handleDecrypt(event)}
-                        disabled={isDecrypting}
-                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
-                      >
-                        {isDecrypting ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Decrypting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Unlock className="w-3.5 h-3.5" />
-                            <span>Decrypt & View Token</span>
-                          </>
-                        )}
-                      </button>
+                      !isOwnProfile ? (
+                        <button
+                          type="button"
+                          disabled
+                          title="Only the private key holder of this profile can decrypt incoming eCash."
+                          className="px-3 py-1.5 bg-slate-800 text-slate-400 border border-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-not-allowed opacity-75 shadow-xs"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Locked (Recipient Only)</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleDecrypt(event)}
+                          disabled={isDecrypting}
+                          className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm hover:scale-102"
+                        >
+                          {isDecrypting ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Decrypting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Unlock className="w-3.5 h-3.5" />
+                              <span>🔓 Decrypt & View Token</span>
+                            </>
+                          )}
+                        </button>
+                      )
                     ) : (
                       <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-950/80 border border-emerald-700/80 px-3 py-1 rounded-xl flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5" />
