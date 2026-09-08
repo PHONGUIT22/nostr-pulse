@@ -23,7 +23,12 @@ export async function GET(
 
   // Verify NIP-05 & calculate Trust Score
   const nip05Result = await verifyNip05(profile.nip05, profile.pubkey);
-  const trustData = calculateTrustScore(profile, nip05Result);
+  const trustData = calculateTrustScore(profile, nip05Result, {
+    relayCount: profile.relays_connected || 4,
+    hasNip65RelayList: Boolean(profile.relays_connected && profile.relays_connected > 2),
+    hasRecentNotes: false,
+    accountCreatedAt: profile.created_at,
+  });
 
   const score = trustData.score;
   let bgRight = "#10b981"; // Emerald

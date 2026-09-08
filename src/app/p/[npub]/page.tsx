@@ -86,8 +86,13 @@ export default async function CreatorProfilePage({ params }: PageProps) {
   // 1. Cryptographic NIP-05 DNS verification
   const nip05Result = await verifyNip05(profile.nip05, profile.pubkey);
 
-  // 2. Calculate Trust Score from verified data
-  const trustData = calculateTrustScore(profile, nip05Result);
+  // 2. Calculate Trust Score from verified data with extra relay & activity signals
+  const trustData = calculateTrustScore(profile, nip05Result, {
+    relayCount: profile.relays_connected || 4,
+    hasNip65RelayList: Boolean(profile.relays_connected && profile.relays_connected > 2),
+    hasRecentNotes: recentNotes.length > 0,
+    accountCreatedAt: profile.created_at,
+  });
   
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-slate-900 pb-20">
