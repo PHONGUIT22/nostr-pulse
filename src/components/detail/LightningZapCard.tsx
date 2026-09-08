@@ -317,6 +317,10 @@ export default function LightningZapCard({
         mintUrl,
       });
 
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("nutzap_received"));
+      }
+
       setStatus("success");
       setStatusMessage(`🥜 Success! Minted & delivered ${sats.toLocaleString()} Sats eCash NutZap to ${name}!`);
       setComment("");
@@ -382,6 +386,10 @@ export default function LightningZapCard({
         comment: comment.trim(),
         mintUrl: verifiedMintUrl || selectedMintUrl,
       });
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("nutzap_received"));
+      }
 
       setStatus("success");
       setStatusMessage(`🥜 NutZap Sent! Delivered ${verifiedCashuAmount.toLocaleString()} Sats in eCash to ${name}.`);

@@ -107,6 +107,18 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
     }
   }, [isExpanded, isOwnProfile, loadNutZaps]);
 
+  // Listen for newly broadcasted NutZaps on the same page for instant auto-refresh
+  useEffect(() => {
+    const handleNutZapReceived = () => {
+      loadNutZaps();
+    };
+
+    window.addEventListener("nutzap_received", handleNutZapReceived);
+    return () => {
+      window.removeEventListener("nutzap_received", handleNutZapReceived);
+    };
+  }, [loadNutZaps]);
+
   // Decrypt single NutZap event
   const handleDecrypt = async (event: NutZapEvent) => {
     setDecryptingMap((prev) => ({ ...prev, [event.id]: true }));

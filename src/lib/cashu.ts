@@ -35,8 +35,11 @@ export const RECOMMENDED_MINTS: CashuMintOption[] = [
 export const DEFAULT_CASHU_MINT = RECOMMENDED_MINTS[0].url;
 
 const RELAYS = [
-  "wss://relay.primal.net",
-  "wss://nos.lol"
+  "wss://relay.damus.io",
+  "wss://nos.lol",
+  "wss://nostr.band",
+  "wss://purplerelay.com",
+  "wss://relay.current.fyi"
 ];
 
 export interface CashuProof {
@@ -613,25 +616,13 @@ export async function sendCashuNutZap({
 
   const pool = new SimplePool();
   try {
-    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const publishPromises = RELAYS.map(async (relayUrl) => {
-      try {
-        const pub = pool.publish([relayUrl], signedEvent);
-        await Promise.race([pub, timeoutPromise]);
-      } catch {}
-    });
-
+    const pubPromises = pool.publish(RELAYS, signedEvent);
     await Promise.race([
-      Promise.allSettled(publishPromises),
-      new Promise((resolve) => setTimeout(resolve, 2000)),
+      Promise.any(pubPromises),
+      new Promise((resolve) => setTimeout(resolve, 3000))
     ]);
   } catch (err) {
-    console.warn("Relay pool broadcast finished with minor warnings:", err);
-  } finally {
-    try {
-      pool.close(RELAYS);
-    } catch {}
+    console.warn("NutZap publish warning:", err);
   }
 
   return signedEvent;
