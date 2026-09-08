@@ -16,6 +16,7 @@ import LiveZapFeed from "@/components/detail/LiveZapFeed";
 import Breadcrumb from "@/components/detail/Breadcrumb";
 import UserAvatar from "@/components/ui/UserAvatar";
 import CreatorNotesFeed from "@/components/detail/CreatorNotesFeed";
+import NutZapInbox from "@/components/detail/NutZapInbox";
 import { 
   Zap, 
   ShieldCheck, 
@@ -239,7 +240,14 @@ export default async function CreatorProfilePage({ params }: PageProps) {
               pubkey={profile.pubkey}
             />
 
-            {/* 3. Latest Nostr notes feed (Kind 1) */}
+            {/* 3. Incoming NutZaps Inbox (NIP-61 Receiver & Claim Flow) */}
+            <NutZapInbox
+              recipientPubkey={profile.pubkey}
+              recipientNpub={encodedNpub}
+              recipientName={displayName}
+            />
+
+            {/* 4. Latest Nostr notes feed (Kind 1) */}
             <CreatorNotesFeed 
               notes={recentNotes} 
               creatorName={displayName} 

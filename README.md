@@ -248,7 +248,8 @@ nostr-pulse/
 │       │   └── NetworkModeToggle.tsx# Real-time P2P vs. Edge Cache mode switcher with live telemetry
 │       └── detail/
 │           ├── LiveZapFeed.tsx      # Real-time WebSocket client streaming Kind 9735 Zap receipts
-│           └── LightningZapCard.tsx # Dual-rail settlement card: Lightning (NIP-57) + Cashu (NIP-61)
+│           ├── LightningZapCard.tsx # Dual-rail settlement card: Lightning (NIP-57) + Cashu (NIP-61)
+│           └── NutZapInbox.tsx      # NIP-61 Kind 9321 NutZap receiver, NIP-44 decrypt & claim engine
 ```
 
 ---

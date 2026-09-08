@@ -636,3 +636,238 @@ export async function sendCashuNutZap({
 
   return signedEvent;
 }
+
+export interface NutZapEvent {
+  id: string;
+  pubkey: string;
+  content: string;
+  created_at: number;
+  tags: string[][];
+  recipientPubkey: string;
+  amountSats?: number;
+  mintUrl?: string;
+  encryptionScheme?: string;
+}
+
+export interface DecryptedNutZap {
+  token: string;
+  memo: string;
+  amount: number;
+  mint: string;
+}
+
+/**
+ * 6. Queries open relays for incoming Kind 9321 NutZaps for a given user pubkey
+ */
+export async function fetchIncomingNutZaps(
+  userHexPubkey: string,
+  relays?: string[]
+): Promise<NutZapEvent[]> {
+  let hex = userHexPubkey.trim();
+  if (hex.startsWith("npub1")) {
+    try {
+      const decoded = nip19.decode(hex);
+      if (decoded.type === "npub") hex = decoded.data as string;
+    } catch {}
+  }
+
+  if (!hex || !/^[0-9a-fA-F]{64}$/.test(hex)) {
+    return [];
+  }
+
+  const targetRelays = relays && relays.length > 0 ? relays : RELAYS;
+  const pool = new SimplePool();
+
+  try {
+    const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 4000));
+
+    const queryPromise = pool.querySync(targetRelays, {
+      kinds: [9321],
+      "#p": [hex.toLowerCase()],
+      limit: 50,
+    }).catch(() => []);
+
+    const events = await Promise.race([queryPromise, timeoutPromise]);
+
+    if (!Array.isArray(events)) return [];
+
+    return events
+      .sort((a, b) => b.created_at - a.created_at)
+      .map((e) => {
+        const amtTag = e.tags?.find((t: any) => t[0] === "amount");
+        const mintTag = e.tags?.find((t: any) => t[0] === "u");
+        const encTag = e.tags?.find((t: any) => t[0] === "encryption");
+        const amountSats = amtTag && amtTag[1] ? Math.round(Number(amtTag[1]) / 1000) : undefined;
+        const mintUrl = mintTag && mintTag[1] ? mintTag[1] : undefined;
+        const encryptionScheme = encTag && encTag[1] ? encTag[1] : undefined;
+
+        return {
+          id: e.id,
+          pubkey: e.pubkey,
+          content: e.content,
+          created_at: e.created_at,
+          tags: e.tags || [],
+          recipientPubkey: hex.toLowerCase(),
+          amountSats,
+          mintUrl,
+          encryptionScheme,
+        };
+      });
+  } catch (err) {
+    console.warn("Failed to fetch incoming NutZaps:", err);
+    return [];
+  } finally {
+    try {
+      pool.close(targetRelays);
+    } catch {}
+  }
+}
+
+/**
+ * 7. Decrypts an incoming Kind 9321 NutZap event using NIP-44 (or NIP-04 fallback) via window.nostr
+ */
+export async function decryptNutZap(
+  event: any
+): Promise<{ token: string; memo: string; amount: number; mint: string }> {
+  if (typeof window === "undefined" || !(window as any).nostr) {
+    throw new Error("Nostr browser extension (window.nostr) is required to decrypt private NutZaps.");
+  }
+
+  const nostr = (window as any).nostr;
+  let decryptedText = "";
+
+  const encTag = event.tags?.find((t: any) => t[0] === "encryption");
+  const isNip04 = encTag && encTag[1] === "nip04";
+
+  // Priority 1: NIP-44 Decrypt via window.nostr.nip44
+  if (!isNip04 && nostr.nip44?.decrypt) {
+    try {
+      decryptedText = await nostr.nip44.decrypt(event.pubkey, event.content);
+    } catch (nip44Err) {
+      console.warn("window.nostr.nip44.decrypt failed, attempting NIP-04 fallback:", nip44Err);
+    }
+  }
+
+  // Priority 2: Fallback to NIP-04 Decrypt
+  if (!decryptedText && nostr.nip04?.decrypt) {
+    try {
+      decryptedText = await nostr.nip04.decrypt(event.pubkey, event.content);
+    } catch (nip04Err) {
+      console.warn("window.nostr.nip04.decrypt failed:", nip04Err);
+    }
+  }
+
+  if (!decryptedText) {
+    throw new Error("Could not decrypt NutZap. Ensure your active Nostr extension has the private key for this recipient.");
+  }
+
+  // Parse payload (either JSON object or direct cashu token)
+  try {
+    const data = JSON.parse(decryptedText);
+    const token = data.token || "";
+    let amount = Number(data.amount || 0);
+    let mint = data.mint || "";
+
+    if ((!amount || !mint) && token) {
+      try {
+        const parsed = parseCashuToken(token);
+        if (!amount) amount = parsed.totalAmountSats;
+        if (!mint) mint = parsed.mint;
+      } catch {}
+    }
+
+    return {
+      token,
+      memo: data.memo || "",
+      amount,
+      mint,
+    };
+  } catch {
+    const trimmed = decryptedText.trim();
+    if (trimmed.startsWith("cashuA") || trimmed.startsWith("cashuB")) {
+      const parsed = parseCashuToken(trimmed);
+      return {
+        token: trimmed,
+        memo: "",
+        amount: parsed.totalAmountSats,
+        mint: parsed.mint,
+      };
+    }
+    throw new Error("Decrypted NutZap content is not a valid JSON or Cashu token.");
+  }
+}
+
+/**
+ * 8. Claims / redeems an incoming Cashu token by swapping proofs at the Mint
+ * This invalidates the sender's proofs and gives the recipient fresh secret proofs.
+ */
+export async function claimNutZapToken(
+  tokenString: string,
+  mintUrl?: string
+): Promise<{
+  success: boolean;
+  amountSats: number;
+  mint: string;
+  newToken?: string;
+  error?: string;
+}> {
+  try {
+    const parsed = parseCashuToken(tokenString);
+    const cleanMint = (mintUrl || parsed.mint || DEFAULT_CASHU_MINT).trim().replace(/\/+$/, "");
+
+    const wallet = new Wallet(cleanMint);
+    if (typeof (wallet as any).loadMint === "function") {
+      try {
+        await (wallet as any).loadMint();
+      } catch {}
+    }
+
+    let claimedProofs: any[] = [];
+
+    if (typeof (wallet as any).receive === "function") {
+      try {
+        const res = await (wallet as any).receive(tokenString);
+        if (Array.isArray(res)) {
+          claimedProofs = res;
+        } else if (res && Array.isArray(res.proofs)) {
+          claimedProofs = res.proofs;
+        }
+      } catch (receiveErr: any) {
+        console.warn("wallet.receive failed, trying fallback swap:", receiveErr);
+        if (typeof (wallet as any).swap === "function") {
+          const swapRes = await (wallet as any).swap(parsed.proofs);
+          if (Array.isArray(swapRes)) {
+            claimedProofs = swapRes;
+          } else if (swapRes && Array.isArray(swapRes.proofs)) {
+            claimedProofs = swapRes.proofs;
+          }
+        } else {
+          throw receiveErr;
+        }
+      }
+    }
+
+    const totalAmount = claimedProofs.length > 0
+      ? claimedProofs.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
+      : parsed.totalAmountSats;
+
+    const newToken = claimedProofs.length > 0
+      ? encodeCashuToken(cleanMint, claimedProofs)
+      : tokenString;
+
+    return {
+      success: true,
+      amountSats: totalAmount,
+      mint: cleanMint,
+      newToken,
+    };
+  } catch (err: any) {
+    console.error("claimNutZapToken error:", err);
+    return {
+      success: false,
+      amountSats: 0,
+      mint: mintUrl || "",
+      error: err.message || "Failed to claim eCash token with Mint.",
+    };
+  }
+}
