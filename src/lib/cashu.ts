@@ -813,36 +813,57 @@ export async function claimNutZapToken(
 }> {
   try {
     const parsed = parseCashuToken(tokenString);
-    const cleanMint = (mintUrl || parsed.mint || DEFAULT_CASHU_MINT).trim().replace(/\/+$/, "");
+    let cleanMint = (mintUrl || parsed.mint || DEFAULT_CASHU_MINT).trim().replace(/\/+$/, "");
+    if (!cleanMint.startsWith("http://") && !cleanMint.startsWith("https://")) {
+      cleanMint = "https://" + cleanMint;
+    }
 
     const wallet = new Wallet(cleanMint);
-    if (typeof (wallet as any).loadMint === "function") {
-      try {
+    
+    // Ensure keys and mint info are loaded
+    try {
+      if (typeof (wallet as any).loadMint === "function") {
         await (wallet as any).loadMint();
-      } catch {}
+      }
+      if (typeof (wallet as any).getKeys === "function") {
+        await (wallet as any).getKeys();
+      }
+    } catch (e) {
+      console.warn("Mint keys load warning:", e);
     }
+
+    const activeMintUrl = (wallet as any).mint?.mintUrl || cleanMint;
+
+    // Construct canonical Token object with matching mint URL to avoid slash mismatch
+    const tokenObj = {
+      token: [
+        {
+          mint: activeMintUrl,
+          proofs: parsed.proofs,
+        },
+      ],
+      unit: parsed.unit || "sat",
+    };
 
     let claimedProofs: any[] = [];
 
     if (typeof (wallet as any).receive === "function") {
       try {
-        const res = await (wallet as any).receive(tokenString);
+        // Priority 1: Receive using canonical tokenObj
+        const res = await (wallet as any).receive(tokenObj);
         if (Array.isArray(res)) {
           claimedProofs = res;
         } else if (res && Array.isArray(res.proofs)) {
           claimedProofs = res.proofs;
         }
-      } catch (receiveErr: any) {
-        console.warn("wallet.receive failed, trying fallback swap:", receiveErr);
-        if (typeof (wallet as any).swap === "function") {
-          const swapRes = await (wallet as any).swap(parsed.proofs);
-          if (Array.isArray(swapRes)) {
-            claimedProofs = swapRes;
-          } else if (swapRes && Array.isArray(swapRes.proofs)) {
-            claimedProofs = swapRes.proofs;
-          }
-        } else {
-          throw receiveErr;
+      } catch (tokenObjErr) {
+        console.warn("wallet.receive(tokenObj) failed, trying raw tokenString fallback:", tokenObjErr);
+        // Priority 2: Fallback to raw token string
+        const res = await (wallet as any).receive(tokenString);
+        if (Array.isArray(res)) {
+          claimedProofs = res;
+        } else if (res && Array.isArray(res.proofs)) {
+          claimedProofs = res.proofs;
         }
       }
     }
