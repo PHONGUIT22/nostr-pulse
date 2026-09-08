@@ -20,7 +20,8 @@ import {
   ChevronUp,
   SearchCode,
   QrCode,
-  X
+  X,
+  ExternalLink
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { nip19 } from "nostr-tools";
@@ -179,6 +180,12 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
     const dec = decryptedMap[event.id];
     if (!dec?.token) return;
 
+    // Guard: Prevent redundant network calls if token is already marked spent
+    const currentStatus = tokenStatusMap[event.id];
+    if (currentStatus?.isValid === false && (currentStatus.reason?.toLowerCase().includes("spent") || currentStatus.reason?.toLowerCase().includes("claimed"))) {
+      return;
+    }
+
     setClaimingMap((prev) => ({ ...prev, [event.id]: true }));
 
     try {
@@ -195,8 +202,8 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
       const errMsg = err?.message || "Failed to claim token.";
       const lowerErr = errMsg.toLowerCase();
 
-      // Detect spent token error and immediately switch UI badge to red SPENT
-      if (lowerErr.includes("already spent") || lowerErr.includes("token already spent")) {
+      // Detect spent token error and immediately switch UI badge to SPENT
+      if (lowerErr.includes("spent") || lowerErr.includes("already claimed") || lowerErr.includes("already spent")) {
         setTokenStatusMap((prev) => ({
           ...prev,
           [event.id]: { isValid: false, reason: "Token Already Spent" },
@@ -373,6 +380,17 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
             const isClaiming = Boolean(claimingMap[event.id]);
             const claimResult = claimResultMap[event.id];
 
+            const isSpent = Boolean(
+              (tokenStatus && !tokenStatus.isValid && (
+                tokenStatus.reason?.toLowerCase().includes("spent") ||
+                tokenStatus.reason?.toLowerCase().includes("claimed")
+              )) ||
+              (claimResult && !claimResult.success && claimResult.error && (
+                claimResult.error.toLowerCase().includes("spent") ||
+                claimResult.error.toLowerCase().includes("already claimed")
+              ))
+            );
+
             return (
               <div
                 key={event.id}
@@ -489,6 +507,8 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                         <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
                           tokenStatus.isValid
                             ? "bg-emerald-950/60 border-emerald-700 text-emerald-400"
+                            : isSpent
+                            ? "bg-emerald-950/60 border-emerald-500/50 text-emerald-300"
                             : "bg-rose-950/60 border-rose-800 text-rose-400"
                         }`}>
                           {tokenStatus.isValid ? (
@@ -496,10 +516,15 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                               <CheckCircle2 className="w-3 h-3" />
                               🟢 UNSPENT (Ready to redeem)
                             </>
+                          ) : isSpent ? (
+                            <>
+                              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                              🟢 Double-Spend Protection Active
+                            </>
                           ) : (
                             <>
                               <AlertCircle className="w-3 h-3" />
-                              🔴 SPENT ({tokenStatus.reason === "Token Already Spent" || !tokenStatus.reason ? "Already claimed" : tokenStatus.reason})
+                              🔴 {tokenStatus.reason || "Verification Failed"}
                             </>
                           )}
                         </span>
@@ -512,6 +537,40 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                         </span>
                       )}
                     </div>
+
+                    {/* Educational Double-Spend Security Proof Card */}
+                    {isSpent && (
+                      <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-slate-200 space-y-2.5 shadow-md">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[11px] font-bold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>🟢 Double-Spend Protection Active</span>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold text-emerald-400/80 bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-700/50">
+                            NUT-07 SPENT
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-300 leading-relaxed font-normal">
+                          This bearer token has already been claimed and permanently invalidated by the Mint. Under Chaumian eCash protocol rules, each proof secret can only be redeemed once to eliminate double-spending.
+                        </p>
+
+                        <div className="pt-0.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <a
+                            href="https://cashu.me"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
+                          >
+                            <span>👉 How to get a fresh test token in 10s</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                          <p className="text-[11px] text-slate-400 italic leading-snug">
+                            💡 <span className="font-semibold text-slate-300">Tip:</span> On <span className="text-emerald-400 font-semibold">cashu.me</span>, add Mint <code className="text-emerald-300 font-mono bg-slate-900/80 px-1 py-0.5 rounded border border-slate-700">https://testnut.cashu.space</code> in Settings, receive free test sats, and generate a new token.
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Action Buttons Row */}
                     <div className="flex items-center gap-2 flex-wrap pt-1">
@@ -545,26 +604,36 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                       <button
                         type="button"
                         onClick={() => handleVerifyOnMint(event)}
-                        disabled={isVerifying}
+                        disabled={isVerifying || isSpent}
                         className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700 disabled:opacity-50"
-                        title="Query Mint node directly to check token spent state"
+                        title={isSpent ? "Token already verified as spent on Mint" : "Query Mint node directly to check token spent state"}
                       >
                         <SearchCode className="w-3.5 h-3.5 text-amber-400" />
                         <span>Verify on Mint</span>
                       </button>
 
                       {/* 3. 1-Click Claim eCash Button */}
-                      {!claimResult?.success && tokenStatus?.isValid !== false && (
+                      {!claimResult?.success && (
                         <button
                           type="button"
                           onClick={() => handleClaim(event)}
-                          disabled={isClaiming}
-                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+                          disabled={isClaiming || isSpent || tokenStatus?.isValid === false}
+                          className={`px-3.5 py-1.5 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm ${
+                            isSpent || tokenStatus?.isValid === false
+                              ? "bg-slate-800/80 border border-slate-700 text-slate-500 cursor-not-allowed opacity-60"
+                              : "bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer disabled:opacity-50"
+                          }`}
+                          title={isSpent ? "Token already redeemed and invalidated by Mint" : "Claim Sats to fresh token"}
                         >
                           {isClaiming ? (
                             <>
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               <span>Claiming...</span>
+                            </>
+                          ) : isSpent || tokenStatus?.isValid === false ? (
+                            <>
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>Token Spent</span>
                             </>
                           ) : (
                             <>
@@ -601,8 +670,8 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                       </div>
                     )}
 
-                    {/* Claim result error if any */}
-                    {claimResult?.error && (
+                    {/* Claim result error if any (only non-spent errors) */}
+                    {claimResult?.error && !isSpent && (
                       <p className="text-xs text-rose-400 font-mono">
                         Claim error: {claimResult.error}
                       </p>
