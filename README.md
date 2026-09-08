@@ -68,30 +68,43 @@ Open protocols like Nostr eliminate centralized deplatforming, but introduce two
 
 ### The Freedom Tech Architecture
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                         NOSTRPULSE ARCHITECTURE OVERVIEW                         │
-└──────────────────────────────────────────────────────────────────────────────────┘
-                 
-     [ Sovereign Identity Layer ]             [ Dual-Rail Value Settlement ]
-       NIP-01: P2P WebSocket Gossip             NIP-57: Lightning Zaps (WebLN)
-       NIP-05: Cryptographic DNS Check          NIP-61: Cashu NutZaps (Kind 9321)
-       NIP-65: Dynamic Relay Outbox             NIP-44: E2E DH Payload Encryption
-                    │                                         │
-                    ▼                                         ▼
-┌──────────────────────────────────────┐   ┌──────────────────────────────────────┐
-│  5-Pillar Anti-Sybil Trust Engine    │   │      Full-Cycle Cashu eCash Engine   │
-│  - Multi-Signal Rule-Based Matrix    │   │  - 1-Click BOLT-11 Minting (NUT-04)  │
-│  - Edge-Optimized (< 50ms execution) │   │  - RFC 8949 Binary CBOR Parser (V4)  │
-│  - Anti-Sybil Damping Guard (42 pt)  │   │  - Truncated Keyset Auto-Expansion   │
-│  - Zero Graph Crashes on Mobile      │   │  - Proof-Swap Claiming & NutZap Inbox│
-└──────────────────────────────────────┘   └──────────────────────────────────────┘
-                    │                                         │
-                    ▼                                         ▼
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                   Dual Network Engine: Pure P2P ⚡ Fast Edge                     │
-│    Toggle between 100% Direct Relay WebSockets & Primal Accelerated Edge Cache   │
-└──────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Client["Client Entrypoint & Extensions"]
+        User["User / Evaluator"]
+        Signer["NIP-07 Signer (Alby, nos2x)"]
+        User <--> Signer
+    end
+
+    subgraph Identity["1. Sovereign Identity Layer"]
+        NIP01["NIP-01: WebSocket Relay Aggregation"]
+        NIP05["NIP-05: Cryptographic DNS Verification"]
+        NIP65["NIP-65: Dynamic Creator Outbox Mesh"]
+    end
+
+    subgraph Settlement["2. Dual-Rail Value Settlement"]
+        NIP57["NIP-57: Lightning Zaps (WebLN Auto-Dispatch)"]
+        NIP61["NIP-61: Cashu NutZaps (Kind 9321 Bearer Delivery)"]
+        NIP44["NIP-44 v2: E2E ChaCha20-Poly1305 Encryption"]
+        NUT00["NUT-00 V4: Native RFC 8949 CBOR Decoding"]
+    end
+
+    subgraph Engines["3. Core Processing Engines"]
+        TrustEngine["5-Pillar Anti-Sybil Trust Engine: Deterministic Edge Matrix (< 50ms) + 42-Pt Cap"]
+        eCashEngine["Full-Cycle Cashu eCash Engine: 1-Click Minting, Keyset Expansion & Proof Swap"]
+    end
+
+    subgraph Transport["4. Dual Network Transport Engine"]
+        FastCache["⚡ Fast Cache Mode: Primal Edge Accelerated Telemetry"]
+        PureP2P["🛡️ Pure P2P Mode: 100% Direct Relay WebSockets (SimplePool)"]
+    end
+
+    Client --> Identity
+    Client --> Settlement
+    Identity --> TrustEngine
+    Settlement --> eCashEngine
+    TrustEngine --> Transport
+    eCashEngine --> Transport
 ```
 
 | Dimension | Legacy Web2 Platforms | Standard Nostr Clients | NostrPulse (Freedom Stack) |
@@ -108,26 +121,43 @@ Open protocols like Nostr eliminate centralized deplatforming, but introduce two
 
 NostrPulse completes the entire economic loop of **NIP-61 (NutZaps)**, enabling both sending and receiving privacy-preserving Chaumian eCash.
 
-```text
-SENDER PIPELINE:
-[Select Sats] ──► [NUT-04 BOLT-11 Quote] ──► [Settle via WebLN] ──► [Mint Proofs]
-       │
-       ▼
-[NIP-44 v2 E2E Encryption] ──► [Kind 9321 Event Finalization] ──► [Broadcast to Relay Mesh]
-                                                                            │
-────────────────────────────────────────────────────────────────────────────┼──────────
-                                                                            │
-RECEIVER PIPELINE (NutZap Inbox):                                           ▼
-[Relay Mesh Query: #p=userPubkey] ◄─────────────────────────────────────────┘
-       │
-       ▼
-[NIP-07 / window.nostr.nip44.decrypt] ──► [Payload: { token, memo, amount, mint }]
-       │
-       ▼
-[Mint Keyset Expansion: 16-hex ➔ 66-hex] ──► [NUT-03 / wallet.receive Proof Swap]
-       │
-       ▼
-[Sender Proofs Invalidated] ──► [Recipient Holds Fresh Secret Proofs] ──► [Claim Complete]
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Sender as Sender (Tipper)
+    participant Mint as Cashu Mint Node
+    participant Signer as NIP-07 Signer (Alby / nos2x)
+    participant Relays as Open Relay Mesh
+    actor Receiver as Receiver (Creator)
+
+    Note over Sender,Mint: Phase 1: 1-Click Minting or Token Input (NUT-04)
+    Sender->>Mint: Request BOLT-11 Quote (NUT-04)
+    Mint-->>Sender: Return Lightning Invoice & Hash
+    Sender->>Sender: Settle invoice via WebLN or QR code
+    Sender->>Mint: Poll Quote & Mint Tokens
+    Mint-->>Sender: Return Fresh Secret Proofs (cashuA / cashuB)
+
+    Note over Sender,Relays: Phase 2: E2E Encryption & Kind 9321 Broadcast
+    Sender->>Sender: Construct NutZap Payload { token, memo, amount, mint }
+    Sender->>Signer: Request NIP-44 v2 encryption with recipient pubkey
+    Signer-->>Sender: Return encrypted ciphertext (MEV / Front-running immune)
+    Sender->>Relays: Publish Kind 9321 event (tags: p, amount, u, encryption)
+    Relays-->>Relays: Gossip across multi-relay mesh
+
+    Note over Receiver,Relays: Phase 3: Relay Ingestion & NIP-44 Decrypt (Inbox)
+    Receiver->>Relays: Query incoming Kind 9321 events (#p: [recipientPubkey])
+    Relays-->>Receiver: Return matching encrypted events
+    Receiver->>Signer: window.nostr.nip44.decrypt(senderPubkey, content)
+    Signer-->>Receiver: Decrypted plaintext payload { token, memo, amount, mint }
+
+    Note over Receiver,Mint: Phase 4: Keyset Auto-Expansion & Proof Swap (NUT-03)
+    Receiver->>Mint: GET /v1/keysets (Fetch active keysets)
+    Mint-->>Receiver: Return full 66-hex active keyset IDs
+    Receiver->>Receiver: Auto-expand truncated 16-hex CBOR keyset IDs to full 66-hex IDs
+    Receiver->>Mint: wallet.receive(canonicalFlatToken) proof swap
+    Mint-->>Mint: Invalidate sender proofs (NUT-07 SPENT state)
+    Mint-->>Receiver: Issue brand new unspent bearer proofs
+    Note over Receiver: Settlement Complete: Recipient holds new private eCash
 ```
 
 ### 1. Sender Pipeline
@@ -221,38 +251,13 @@ Rather than executing heavy, memory-intensive graph traversal algorithms (e.g. E
 
 It evaluates identity signals in under 50ms per keypair, directly against open Nostr relay data:
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                      5-PILLAR DETERMINISTIC REPUTATION MATRIX                   │
-├──────────────────────┬─────────┬────────────────────────────────────────────────┤
-│ Pillar               │ Max Pts │ Verification Signal & Heuristic Rationale      │
-├──────────────────────┼─────────┼────────────────────────────────────────────────┤
-│ 1. NIP-05 DNS Anchor │ 25 pts  │ Cryptographic DNS binding (nostr.json check)   │
-│                      │         │ • Custom Domain: 25 pts                        │
-│                      │         │ • Established Provider (primal, alby): 20 pts  │
-│                      │         │ • Free/Disposable Gateway: 12 pts              │
-├──────────────────────┼─────────┼────────────────────────────────────────────────┤
-│ 2. Core Proximity    │ 25 pts  │ Network graph topology & dynamic relay sync    │
-│    & NIP-65 Relay    │         │ • Direct Core Seed Key: 25 pts                 │
-│                      │         │ • Relay Diversity (+3 pts/relay, max 15)       │
-│                      │         │ • NIP-65 Relay List presence: +10 pts          │
-├──────────────────────┼─────────┼────────────────────────────────────────────────┤
-│ 3. Lightning V4V &   │ 20 pts  │ Economic Value-4-Value endpoint readiness      │
-│    LNURL Readiness   │         │ • Active Lightning Address (lud16): 15 pts     │
-│                      │         │ • Valid LNURL-pay endpoint (lud06): 5 pts      │
-├──────────────────────┼─────────┼────────────────────────────────────────────────┤
-│ 4. Keypair Longevity │ 15 pts  │ Age of public key and broadcast consistency    │
-│    & Activity        │         │ • Account Age > 1 yr: 8 pts (6 mo: 5, 1 mo: 2)│
-│                      │         │ • Recent Note Broadcasts: 7 pts                │
-│                      │         │ • Core Seed Keys: Full 15 pts                  │
-├──────────────────────┼─────────┼────────────────────────────────────────────────┤
-│ 5. Identity Complete │ 15 pts  │ Metadata authenticity & profile entropy        │
-│    & Anti-Spam       │         │ • Valid Avatar URL: 5 pts                      │
-│                      │         │ • Bio length >= 10 chars: 5 pts                │
-│                      │         │ • Sovereign Website URL: 5 pts                 │
-│                      │         │ • Anti-Spam Penalty (Hex/npub handle): -10 pts │
-└──────────────────────┴─────────┴────────────────────────────────────────────────┘
-```
+| Pillar | Max Points | Verification Signal & Heuristic Rationale | Sybil Defense Impact |
+| :--- | :---: | :--- | :--- |
+| **1. NIP-05 DNS Anchor** | **25 pts** | Cryptographic DNS binding verified via `/.well-known/nostr.json`.<br>• **Custom Domain:** 25 pts (Highest sovereign authority)<br>• **Established Provider (`primal.net`, `getalby.com`):** 20 pts<br>• **Free/Disposable Gateway (`iris.to`, `nostrcheck.me`):** 12 pts | **High:** Imposes domain ownership costs and DNS registry authority, preventing disposable bot generation. |
+| **2. Core Proximity & NIP-65 Mesh** | **25 pts** | Evaluates network graph topology and dynamic relay diversity.<br>• **Direct Core Seed Node (e.g. Jack, fiatjaf, jb55):** 25 pts<br>• **Relay Diversity:** +3 pts per connected relay (capped at 15 pts)<br>• **NIP-65 Relay List (Kind 10002) presence:** +10 pts | **High:** Prevents isolated cluster Sybils by measuring replication across the global public relay fabric. |
+| **3. Lightning V4V & LNURL Readiness** | **20 pts** | Verifies active Value-4-Value micro-transaction endpoints.<br>• **Active Lightning Address (`lud16`):** 15 pts<br>• **Valid LNURL-pay endpoint (`lud06`):** 5 pts | **Medium:** Filters out inactive bot accounts by validating economic settlement readiness. |
+| **4. Keypair Longevity & Broadcast Entropy** | **15 pts** | Evaluates cryptographic keypair age and broadcast consistency.<br>• **Account Age > 1 year:** 8 pts (6 months: 5 pts, 1 month: 2 pts)<br>• **Recent Note Activity (Kind 1):** 7 pts<br>• **Core Seed Keys:** Full 15 pts | **Medium:** Defeats freshly instantiated bot swarms by rewarding key durability over time. |
+| **5. Identity Completeness & Anti-Spam** | **15 pts** | Evaluates profile entropy and penalizes spam signatures.<br>• **Valid Avatar URL:** 5 pts<br>• **Bio length >= 10 characters:** 5 pts<br>• **Sovereign Website URL:** 5 pts<br>• **Anti-Spam Penalty:** −10 pts if handle matches raw hex/npub pattern | **Low / Defensive:** Differentiates authentic creators while penalizing mass-generated robotic identifiers. |
 
 ### 🔒 The Anti-Sybil Damping Guard (42-Point Ceiling)
 Automated bot farms frequently fabricate complete profiles (avatar, bio, external links) to fool heuristic ranking engines. NostrPulse defeats this vector with an algorithmic **Anti-Sybil Damping Guard**:
@@ -276,18 +281,24 @@ if (!isNip05Verified && networkProximityPoints < 10) {
 
 NostrPulse guarantees censorship resistance through an instant, user-controllable network engine:
 
-```text
-               ┌────────────────────────────────────────────────────────┐
-               │              DUAL NETWORK ENGINE TOGGLE                │
-               └────────────────────────────────────────────────────────┘
-                                            │
-                     ┌──────────────────────┴──────────────────────┐
-                     ▼                                             ▼
-        [ ⚡ Fast Cache Mode ]                           [ 🛡️ Pure P2P Mode ]
-    Primal Edge Acceleration                         100% Direct Relay WebSockets
-    • Sub-second response times                      • Zero third-party API dependencies
-    • Global edge CDN caching                        • Direct NIP-01 queries via SimplePool
-    • Ideal for high-throughput exploration          • Immune to indexer downtime or censorship
+```mermaid
+flowchart TD
+    Toggle["Dual Network Engine Switcher (Navbar Control)"]
+
+    subgraph FastMode["⚡ Fast Cache Mode (Primal Edge CDN)"]
+        FastDesc["Sub-second response times & high-throughput aggregation"]
+        FastEdge["Global edge caching layer for instant telemetry queries"]
+        FastDesc --- FastEdge
+    end
+
+    subgraph P2PMode["🛡️ Pure P2P Mode (Decentralized Direct)"]
+        P2PDesc["100% direct browser-to-relay WebSockets via SimplePool"]
+        P2PGuard["Zero third-party API dependencies & immune to indexer censorship"]
+        P2PDesc --- P2PGuard
+    end
+
+    Toggle -->|Selected| FastMode
+    Toggle -->|Selected| P2PMode
 ```
 
 * **Pure P2P Mode:** Communicates exclusively via raw WebSockets directly to Nostr relay nodes (`wss://relay.damus.io`, `wss://nos.lol`, `wss://relay.primal.net`, etc.) using `nostr-tools/SimplePool`. No centralized API or proxy ever touches the request.
