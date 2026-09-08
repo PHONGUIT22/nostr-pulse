@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Search, Key, Scale, Loader2, Zap } from "lucide-react";
 import { resolveNostrSearch } from "@/lib/search";
 import NostrLoginButton from "@/components/layout/NostrLoginButton";
+import NetworkModeToggle from "@/components/layout/NetworkModeToggle";
 
 export default function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,6 +73,9 @@ export default function Navbar() {
               Methodology
             </Link>
           </nav>
+
+          {/* Decentralized Mode Toggle */}
+          <NetworkModeToggle />
 
           <Link
             href="/compare"

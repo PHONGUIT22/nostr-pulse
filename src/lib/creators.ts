@@ -1,5 +1,6 @@
 // src/lib/creators.ts
 import { formatSats } from "@/lib/utils";
+import { getNetworkMode } from "@/lib/network-mode";
 import importedCreators from "./creators.json";
 import { nip19 } from "nostr-tools";
 
@@ -84,7 +85,7 @@ export async function getLiveTopCreators(limit = 10): Promise<Creator[]> {
       const hex = extractHexPubkey(creator);
       let realZapsStr = creator.zapsReceived;
 
-      if (hex) {
+      if (hex && getNetworkMode() !== "p2p") {
         const stats = await fetchPrimalUserStats(hex);
         if (stats && stats.satsZapped > 0) {
           // Format integer sats to compact notation: 4500000 -> 4.5M Sats

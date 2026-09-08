@@ -2,6 +2,7 @@
 import { nip19 } from "nostr-tools";
 import { SimplePool } from "nostr-tools/pool";
 import { FEATURED_CREATORS } from "@/lib/creators";
+import { getNetworkMode } from "@/lib/network-mode";
 
 // Top public Nostr relays for high-availability fallback
 export const DEFAULT_RELAYS = [
@@ -242,42 +243,44 @@ export async function fetchNostrProfile(npubOrHex: string, customRelays?: string
       console.warn("Relay pool query timed out, trying fallback cache...");
     }
 
-    // --- Priority 2: Fallback from Primal API (cache disabled) ---
-    try {
-      const resPrimal = await fetch("https://primal.net/api", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(["user_profile", { pubkey: hexPubkey }]),
-        cache: "no-store", // Force fresh data fetch, no caching
-        signal: AbortSignal.timeout(2000),
-      });
+    // --- Priority 2: Fallback from Primal API (skipped in P2P mode) ---
+    if (getNetworkMode() !== "p2p") {
+      try {
+        const resPrimal = await fetch("https://primal.net/api", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(["user_profile", { pubkey: hexPubkey }]),
+          cache: "no-store", // Force fresh data fetch, no caching
+          signal: AbortSignal.timeout(2000),
+        });
 
-      if (resPrimal.ok) {
-        const events = await resPrimal.json();
-        if (Array.isArray(events)) {
-          const kind0 = events.find((e: any) => e.kind === 0);
-          if (kind0 && kind0.content) {
-            try {
-              const profile = JSON.parse(kind0.content);
-              return {
-                pubkey: hexPubkey,
-                npub: encodedNpub,
-                name: profile.name,
-                displayName: profile.display_name || profile.displayName || profile.name,
-                about: profile.about || profile.bio,
-                picture: profile.picture || profile.image,
-                banner: profile.banner,
-                nip05: profile.nip05,
-                lud16: profile.lud16 || profile.lud06,
-                website: profile.website,
-                created_at: kind0.created_at,
-                relays_connected: targetRelays.length,
-              };
-            } catch {}
+        if (resPrimal.ok) {
+          const events = await resPrimal.json();
+          if (Array.isArray(events)) {
+            const kind0 = events.find((e: any) => e.kind === 0);
+            if (kind0 && kind0.content) {
+              try {
+                const profile = JSON.parse(kind0.content);
+                return {
+                  pubkey: hexPubkey,
+                  npub: encodedNpub,
+                  name: profile.name,
+                  displayName: profile.display_name || profile.displayName || profile.name,
+                  about: profile.about || profile.bio,
+                  picture: profile.picture || profile.image,
+                  banner: profile.banner,
+                  nip05: profile.nip05,
+                  lud16: profile.lud16 || profile.lud06,
+                  website: profile.website,
+                  created_at: kind0.created_at,
+                  relays_connected: targetRelays.length,
+                };
+              } catch {}
+            }
           }
         }
-      }
-    } catch {}
+      } catch {}
+    }
 
     // --- Priority 3: Fallback to local cache list ---
     const matched = FEATURED_CREATORS.find(
