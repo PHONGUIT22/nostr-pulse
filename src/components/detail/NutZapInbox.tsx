@@ -11,40 +11,47 @@ import {
   Copy, 
   RefreshCw, 
   Clock, 
-  ShieldCheck,
-  Zap,
-  Sparkles,
-  Inbox,
-  ArrowDownToLine
+  ShieldCheck, 
+  Zap, 
+  Sparkles, 
+  Inbox, 
+  ArrowDownToLine,
+  ChevronDown,
+  ChevronUp,
+  SearchCode
 } from "lucide-react";
 import { nip19 } from "nostr-tools";
 import { 
   fetchIncomingNutZaps, 
   decryptNutZap, 
   claimNutZapToken, 
-  verifyTokenWithMint,
+  verifyTokenWithMint, 
   NutZapEvent, 
   DecryptedNutZap 
 } from "@/lib/cashu";
+import { normalizeToHex } from "@/lib/nostr";
 
 interface Props {
   recipientPubkey: string;
   recipientNpub: string;
-  recipientName: string;
+  recipientName?: string;
 }
 
-export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientName }: Props) {
+export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientName = "Creator" }: Props) {
   const [nutzaps, setNutzaps] = useState<NutZapEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentUserNpub, setCurrentUserNpub] = useState<string | null>(null);
+  const [currentUserHex, setCurrentUserHex] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   
   // Decrypted states indexed by event ID
   const [decryptedMap, setDecryptedMap] = useState<Record<string, DecryptedNutZap>>({});
   const [decryptingMap, setDecryptingMap] = useState<Record<string, boolean>>({});
   const [decryptErrorMap, setDecryptErrorMap] = useState<Record<string, string>>({});
 
-  // Proof verification states
-  const [tokenStatusMap, setTokenStatusMap] = useState<Record<string, { isValid: boolean; reason?: string }>>({});
+  // Proof verification states: null | { isValid: boolean; reason?: string }
+  const [tokenStatusMap, setTokenStatusMap] = useState<Record<string, { isValid: boolean; reason?: string } | null>>({});
+  const [verifyingMap, setVerifyingMap] = useState<Record<string, boolean>>({});
 
   // Claim states indexed by event ID
   const [claimingMap, setClaimingMap] = useState<Record<string, boolean>>({});
@@ -52,13 +59,34 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
 
   // Copied token indicator
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("nostr_connected_npub");
-      if (saved) setCurrentUserNpub(saved);
+      if (saved) {
+        setCurrentUserNpub(saved);
+        try {
+          const { hex } = normalizeToHex(saved);
+          setCurrentUserHex(hex);
+        } catch {}
+      }
     }
   }, []);
+
+  const isOwnProfile = Boolean(
+    currentUserNpub && (
+      currentUserNpub.toLowerCase() === recipientNpub.toLowerCase() ||
+      (currentUserHex && currentUserHex.toLowerCase() === recipientPubkey.toLowerCase())
+    )
+  );
+
+  // Automatically expand if viewing your own profile
+  useEffect(() => {
+    if (isOwnProfile) {
+      setIsExpanded(true);
+    }
+  }, [isOwnProfile]);
 
   const loadNutZaps = useCallback(async () => {
     if (!recipientPubkey) return;
@@ -74,8 +102,10 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
   }, [recipientPubkey]);
 
   useEffect(() => {
-    loadNutZaps();
-  }, [loadNutZaps]);
+    if (isExpanded || isOwnProfile) {
+      loadNutZaps();
+    }
+  }, [isExpanded, isOwnProfile, loadNutZaps]);
 
   // Decrypt single NutZap event
   const handleDecrypt = async (event: NutZapEvent) => {
@@ -86,11 +116,16 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
       const decrypted = await decryptNutZap(event);
       setDecryptedMap((prev) => ({ ...prev, [event.id]: decrypted }));
 
-      // Automatically verify token proof state with mint
+      // Automatically verify on mint after decryption
       if (decrypted.token) {
-        verifyTokenWithMint(decrypted.token).then((res) => {
-          setTokenStatusMap((prev) => ({ ...prev, [event.id]: res }));
-        });
+        setVerifyingMap((prev) => ({ ...prev, [event.id]: true }));
+        verifyTokenWithMint(decrypted.token)
+          .then((res) => {
+            setTokenStatusMap((prev) => ({ ...prev, [event.id]: res }));
+          })
+          .finally(() => {
+            setVerifyingMap((prev) => ({ ...prev, [event.id]: false }));
+          });
       }
     } catch (err: any) {
       setDecryptErrorMap((prev) => ({ 
@@ -102,7 +137,26 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
     }
   };
 
-  // Claim token with Mint
+  // Explicit Verify on Mint action
+  const handleVerifyOnMint = async (event: NutZapEvent) => {
+    const dec = decryptedMap[event.id];
+    if (!dec?.token) return;
+
+    setVerifyingMap((prev) => ({ ...prev, [event.id]: true }));
+    try {
+      const res = await verifyTokenWithMint(dec.token);
+      setTokenStatusMap((prev) => ({ ...prev, [event.id]: res }));
+    } catch (err: any) {
+      setTokenStatusMap((prev) => ({
+        ...prev,
+        [event.id]: { isValid: false, reason: err.message || "Mint check failed" },
+      }));
+    } finally {
+      setVerifyingMap((prev) => ({ ...prev, [event.id]: false }));
+    }
+  };
+
+  // Claim / Redeem token with Mint
   const handleClaim = async (event: NutZapEvent) => {
     const dec = decryptedMap[event.id];
     if (!dec?.token) return;
@@ -115,7 +169,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
       if (res.success) {
         setTokenStatusMap((prev) => ({
           ...prev,
-          [event.id]: { isValid: false, reason: "Already claimed & swapped into fresh proofs." },
+          [event.id]: { isValid: false, reason: "Claimed & swapped into fresh secret proofs." },
         }));
       }
     } catch (err: any) {
@@ -128,11 +182,15 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
     }
   };
 
-  const handleCopy = (text: string, id: string) => {
+  const handleCopyToken = (text: string, id: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(text);
       setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2500);
+      setCopyFeedback("Copied! Import into Minibits, Macadamia, or Cashu.me");
+      setTimeout(() => {
+        setCopiedId(null);
+        setCopyFeedback(null);
+      }, 3500);
     }
   };
 
@@ -153,6 +211,38 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
     }
   };
 
+  // If not expanded and not own profile, show toggle button
+  if (!isExpanded && !isOwnProfile) {
+    return (
+      <div className="bg-slate-900 text-white p-5 rounded-3xl border border-slate-800 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-400">
+            <Coins className="w-5 h-5 fill-emerald-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-sm text-slate-200">Incoming eCash NutZaps</h3>
+              <span className="bg-purple-950/80 border border-purple-800 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                NIP-61
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">Inspect and claim private encrypted Kind 9321 NutZaps</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsExpanded(true)}
+          className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer shadow-md hover:scale-102"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Check My Incoming NutZaps</span>
+          <ChevronDown className="w-4 h-4 ml-0.5" />
+        </button>
+      </div>
+    );
+  }
+
   // Calculate total decrypted amount
   const totalDecryptedSats = Object.values(decryptedMap).reduce((sum, d) => sum + (d.amount || 0), 0);
 
@@ -167,18 +257,23 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-black text-lg sm:text-xl">Incoming NutZaps Inbox</h3>
+              <h3 className="font-black text-lg sm:text-xl">Incoming eCash NutZaps</h3>
               <span className="bg-purple-950/80 border border-purple-800 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-purple-400" /> NIP-61 eCash Receiver
+                <Sparkles className="w-3 h-3 text-purple-400" /> NIP-61 Receiver
               </span>
+              {isOwnProfile && (
+                <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  ✓ Your Keypair
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Kind 9321 encrypted Chaumian bearer tokens addressed to {recipientName}
+              Encrypted Chaumian bearer tokens (Kind 9321) addressed to {recipientName}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {totalDecryptedSats > 0 && (
             <span className="bg-emerald-950/60 border border-emerald-800 text-emerald-400 text-xs font-mono font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 fill-emerald-400" />
@@ -195,6 +290,17 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-emerald-400" : ""}`} />
           </button>
+
+          {!isOwnProfile && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer"
+              title="Collapse Inbox"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -205,9 +311,17 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
           <div className="space-y-1">
             <p className="font-bold">Encrypted Bearer Tokens (NIP-44 v2)</p>
             <p className="text-purple-300/80 text-[11px] leading-relaxed">
-              NutZap payloads are end-to-end encrypted with the creator&apos;s public key. Log in with your Nostr extension (Alby, nos2x) using the recipient keypair to decrypt secret proofs and redeem Sats.
+              NutZap payloads are end-to-end encrypted. Log in with your Nostr extension (Alby, nos2x) using this keypair to decrypt incoming tokens and claim Sats.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Global Copy feedback notice */}
+      {copyFeedback && (
+        <div className="p-3 bg-emerald-950/80 border border-emerald-700 rounded-xl text-xs text-emerald-300 font-bold flex items-center gap-2 animate-in fade-in duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{copyFeedback}</span>
         </div>
       )}
 
@@ -216,7 +330,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
         {isLoading && nutzaps.length === 0 ? (
           <div className="p-8 text-center bg-slate-950/40 rounded-2xl border border-slate-800/60 space-y-2">
             <Loader2 className="w-8 h-8 text-emerald-400 mx-auto animate-spin" />
-            <p className="text-xs text-slate-400">Scanning Nostr relays for Kind 9321 NutZaps...</p>
+            <p className="text-xs text-slate-400">Querying open relays for Kind 9321 NutZaps...</p>
           </div>
         ) : nutzaps.length > 0 ? (
           nutzaps.map((event) => {
@@ -225,19 +339,20 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
             const isDecrypting = Boolean(decryptingMap[event.id]);
             const decErr = decryptErrorMap[event.id];
             const tokenStatus = tokenStatusMap[event.id];
+            const isVerifying = Boolean(verifyingMap[event.id]);
             const isClaiming = Boolean(claimingMap[event.id]);
             const claimResult = claimResultMap[event.id];
 
             return (
               <div
                 key={event.id}
-                className={`p-4 sm:p-5 rounded-2xl border transition-all space-y-3 ${
+                className={`p-4 sm:p-5 rounded-2xl border transition-all space-y-3.5 ${
                   isDec
                     ? "bg-slate-950/80 border-emerald-500/40 shadow-emerald-500/5 shadow-lg"
                     : "bg-slate-950/50 border-slate-800/80 hover:border-slate-700"
                 }`}
               >
-                {/* Item Top Row */}
+                {/* Item Top Row: Sender, Encrypted Badge, Timestamp */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
@@ -251,13 +366,15 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                         <span className="font-mono text-xs font-bold text-slate-200">
                           {formatSender(event.pubkey)}
                         </span>
+                        <span className="text-[10px] bg-purple-950/60 border border-purple-800/80 text-purple-300 font-mono px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5" />
+                          {event.encryptionScheme?.toUpperCase() || "NIP-44"} Encrypted
+                        </span>
                         <span className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
                           <Clock className="w-3 h-3" /> {timeAgo(event.created_at)}
                         </span>
-                        <span className="text-[10px] bg-purple-950/60 border border-purple-800/80 text-purple-300 font-mono px-2 py-0.5 rounded-md">
-                          {event.encryptionScheme?.toUpperCase() || "NIP-44"}
-                        </span>
                       </div>
+
                       {event.mintUrl && (
                         <p className="text-[11px] text-slate-400 truncate mt-0.5 font-mono">
                           Mint: {event.mintUrl.replace(/^https?:\/\//, "")}
@@ -266,7 +383,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                     </div>
                   </div>
 
-                  {/* Right side: Amount & Decrypt Trigger */}
+                  {/* Estimated amount & Decrypt Trigger */}
                   <div className="flex items-center gap-2 shrink-0">
                     {event.amountSats && !isDec && (
                       <span className="text-xs font-bold font-mono text-slate-300 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-xl">
@@ -289,7 +406,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                         ) : (
                           <>
                             <Unlock className="w-3.5 h-3.5" />
-                            <span>Decrypt</span>
+                            <span>Decrypt & View Token</span>
                           </>
                         )}
                       </button>
@@ -310,7 +427,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                   </div>
                 )}
 
-                {/* Decrypted Payload Content */}
+                {/* Decrypted Payload Content & Actions */}
                 {isDec && (
                   <div className="pt-2 border-t border-slate-800/80 space-y-3">
                     {/* Memo / message */}
@@ -320,66 +437,92 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                       </div>
                     )}
 
-                    {/* Token Status & Actions */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                      <div className="flex items-center gap-2">
-                        {tokenStatus && (
-                          <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-                            tokenStatus.isValid
-                              ? "bg-emerald-950/60 border-emerald-700 text-emerald-400"
-                              : "bg-amber-950/60 border-amber-700 text-amber-400"
-                          }`}>
-                            {tokenStatus.isValid ? "🟢 Unspent (Ready to Claim)" : `🟡 ${tokenStatus.reason || "Spent / Claimed"}`}
-                          </span>
-                        )}
+                    {/* Mint status indicator */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {isVerifying ? (
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Verifying on Mint...
+                        </span>
+                      ) : tokenStatus ? (
+                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                          tokenStatus.isValid
+                            ? "bg-emerald-950/60 border-emerald-700 text-emerald-400"
+                            : "bg-rose-950/60 border-rose-800 text-rose-400"
+                        }`}>
+                          {tokenStatus.isValid ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3" />
+                              UNSPENT (Ready to redeem)
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-3 h-3" />
+                              SPENT ({tokenStatus.reason || "Already claimed"})
+                            </>
+                          )}
+                        </span>
+                      ) : null}
 
-                        {claimResult?.success && (
-                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-600 text-emerald-300 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                            Claimed & Swapped!
-                          </span>
-                        )}
-                      </div>
+                      {claimResult?.success && (
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-600 text-emerald-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                          Proofs Swapped & Claimed!
+                        </span>
+                      )}
+                    </div>
 
-                      {/* Action buttons: Claim & Copy */}
-                      <div className="flex items-center gap-2">
+                    {/* Action Buttons Row */}
+                    <div className="flex items-center gap-2 flex-wrap pt-1">
+                      {/* 1. Copy Token Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleCopyToken(claimResult?.newToken || dec.token, event.id)}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700"
+                        title="Copy decrypted token to import into Minibits, Macadamia, or Cashu.me"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-purple-400" />
+                        <span>{copiedId === event.id ? "Copied!" : "Copy Token"}</span>
+                      </button>
+
+                      {/* 2. Verify on Mint Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleVerifyOnMint(event)}
+                        disabled={isVerifying}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700 disabled:opacity-50"
+                        title="Query Mint node directly to check token spent state"
+                      >
+                        <SearchCode className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Verify on Mint</span>
+                      </button>
+
+                      {/* 3. 1-Click Claim eCash Button */}
+                      {!claimResult?.success && tokenStatus?.isValid !== false && (
                         <button
                           type="button"
-                          onClick={() => handleCopy(claimResult?.newToken || dec.token, event.id)}
-                          className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                          title="Copy Cashu Bearer Token"
+                          onClick={() => handleClaim(event)}
+                          disabled={isClaiming}
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
                         >
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>{copiedId === event.id ? "Copied!" : "Copy Token"}</span>
+                          {isClaiming ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Claiming...</span>
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDownToLine className="w-3.5 h-3.5" />
+                              <span>Claim Sats</span>
+                            </>
+                          )}
                         </button>
-
-                        {!claimResult?.success && tokenStatus?.isValid !== false && (
-                          <button
-                            type="button"
-                            onClick={() => handleClaim(event)}
-                            disabled={isClaiming}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
-                          >
-                            {isClaiming ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                <span>Claiming...</span>
-                              </>
-                            ) : (
-                              <>
-                                <ArrowDownToLine className="w-3.5 h-3.5" />
-                                <span>Claim eCash</span>
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </div>
 
                     {/* Claim result error if any */}
                     {claimResult?.error && (
                       <p className="text-xs text-rose-400 font-mono">
-                        Error: {claimResult.error}
+                        Claim error: {claimResult.error}
                       </p>
                     )}
                   </div>
@@ -394,7 +537,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
               No NutZaps in Inbox
             </h4>
             <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-              No incoming encrypted NutZaps (Kind 9321) found on open relays for this creator yet. Send a test eCash NutZap above to test the full lifecycle!
+              No incoming encrypted NutZaps (Kind 9321) found on open relays for this creator yet. Send an eCash NutZap in the card above to test!
             </p>
           </div>
         )}
@@ -406,7 +549,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
           End-to-End Encrypted via NIP-44 v2 (Chaumian Bearer Assets)
         </span>
-        <span>NUT-00 V3 & V4 CBOR Token Support</span>
+        <span>Compatible with Minibits, Macadamia & Cashu.me</span>
       </div>
 
     </div>
