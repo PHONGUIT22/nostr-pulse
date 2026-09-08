@@ -63,7 +63,7 @@ export default function TrustScoreCard({ trustData, name, npub = "" }: Props) {
             </div>
 
             <div className="p-4 bg-slate-950/40 rounded-2xl border border-slate-800/80 text-xs text-slate-400">
-              💡 <strong>Why this matters:</strong> Nostr keypairs are free to generate. This algorithm analyzes NIP-05 DNS signatures, Web-of-Trust graph, and Lightning payment endpoints to prevent Sybil impersonation.
+              💡 <strong>Why this matters:</strong> Nostr keypairs are free to generate. This algorithm analyzes NIP-05 DNS signatures, Core Network Proximity, Lightning payment endpoints, account longevity, and profile entropy to prevent Sybil impersonation.
             </div>
           </div>
 
