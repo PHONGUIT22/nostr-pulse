@@ -18,8 +18,11 @@ import {
   ArrowDownToLine,
   ChevronDown,
   ChevronUp,
-  SearchCode
+  SearchCode,
+  QrCode,
+  X
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { nip19 } from "nostr-tools";
 import { 
   fetchIncomingNutZaps, 
@@ -60,6 +63,9 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
   // Copied token indicator
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+
+  // QR code visibility per event
+  const [qrVisibleMap, setQrVisibleMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -520,6 +526,21 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                         <span>{copiedId === event.id ? "Copied!" : "Copy Token"}</span>
                       </button>
 
+                      {/* 1.5. QR Code Button */}
+                      <button
+                        type="button"
+                        onClick={() => setQrVisibleMap(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+                        className={`px-3 py-1.5 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border ${
+                          qrVisibleMap[event.id]
+                            ? "bg-purple-900/60 border-purple-600 text-purple-200"
+                            : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border-slate-700"
+                        }`}
+                        title="Show QR code to scan with Minibits, Macadamia, or Cashu.me"
+                      >
+                        <QrCode className="w-3.5 h-3.5 text-purple-400" />
+                        <span>{qrVisibleMap[event.id] ? "Hide QR" : "📱 QR Code"}</span>
+                      </button>
+
                       {/* 2. Verify on Mint Button */}
                       <button
                         type="button"
@@ -554,6 +575,31 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                         </button>
                       )}
                     </div>
+
+                    {/* QR Code Collapsible View */}
+                    {qrVisibleMap[event.id] && (
+                      <div className="mt-3 p-4 bg-white rounded-2xl border border-slate-600 flex flex-col items-center gap-3 relative">
+                        <button
+                          type="button"
+                          onClick={() => setQrVisibleMap(prev => ({ ...prev, [event.id]: false }))}
+                          className="absolute top-2 right-2 p-1 rounded-full hover:bg-slate-200 transition-colors cursor-pointer"
+                          title="Close QR"
+                        >
+                          <X className="w-4 h-4 text-slate-500" />
+                        </button>
+                        <QRCodeSVG
+                          value={claimResult?.newToken || dec.token}
+                          size={200}
+                          bgColor="#ffffff"
+                          fgColor="#000000"
+                          level="M"
+                          includeMargin={true}
+                        />
+                        <p className="text-[11px] text-slate-600 text-center font-medium max-w-[220px] leading-snug">
+                          Scan with Minibits, Macadamia, or Cashu.me to claim directly to mobile
+                        </p>
+                      </div>
+                    )}
 
                     {/* Claim result error if any */}
                     {claimResult?.error && (

@@ -41,6 +41,8 @@ interface ZapCardProps {
 
 const PRESET_AMOUNTS = [21, 100, 500, 1000, 5000, 21000];
 
+const DEMO_CASHU_TOKEN = "cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcIOkYWEQYXN4QDIyZmM3YWNjMDllZWJlOWNiNjRhMDk3MTQ5MTViYTQ0NDExMDZkM2NlNmQ4YjJkM2FhOWIyNjA0ODY4NzdkYzhhY1ghA1CebGtQCkyvj97TNc6SKjnUepmelsxulOTl5LWm795AYWSjYWVYIFyb9BEKNmcAGJPYyEjYpUrPxdOMVtWCEBWbQxQWhRNGYXNYIIf6SixhZJg6h-BzUsLKyO7p18Zh-hEC-me3JwDhwof0YXJYIKMKKQEkzzMqZQ-JiPYo1VNc9N_AtHixGCNUgk1a429dpGFhBGFzeEA3NzU2NTE0Njg1MDliMDAwOWYxZjRmYzJiYTdmMGZkZjU0YTJlMWI0MDdkODA4ZDljOTZjNTUyNzczODkwYjVkYWNYIQOSWDT_Ur5wOlJMruf0RKnjV5MW4pzeDKp6eUkwRC-uXGFkpGFlWCBXULcGi-G2tlZHxOXZ4FS_7K0LNzSB5HKV2KAbD7qTjmFzWCDlQ7h3vKcXkQd83CaEqbqRxnkFDuXUKKjcWTFuoHG7K2FyWCDvJr0-w1Mk3IfHngjAPHVwAOlY-lkgKjefCaqYsN2p52FjWCECoxaXZzwP2dFrBPq8n8lCVccFh_xaNrGk-cCQvqDqwcI";
+
 function resolveCandidateEndpoints(lud16: string | undefined, defaultHandle: string): { endpoint: string; rawAddress: string }[] {
   const list: { endpoint: string; rawAddress: string }[] = [];
   const cleanUser = defaultHandle.toLowerCase().replace(/[^a-z0-9_]/g, "") || "creator";
@@ -806,6 +808,18 @@ export default function LightningZapCard({
                       </span>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCashuTokenInput(DEMO_CASHU_TOKEN);
+                      setVerifiedCashuAmount(null);
+                    }}
+                    className="mb-2 px-3 py-1.5 bg-amber-950/60 hover:bg-amber-900/60 border border-amber-700/60 text-amber-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Fill textarea with a testnet 21 sat Cashu token for quick testing"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>Auto-fill Demo Token (21 sats)</span>
+                  </button>
                   <textarea
                     rows={3}
                     value={cashuTokenInput}
