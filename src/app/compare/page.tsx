@@ -61,6 +61,11 @@ export default function CompareHubPage() {
       c2: creators[5] || { name: "Lyn Alden", handle: "lynalden", npub: "npub1a2cww4kn9wqte4pw70vjdjzhctrnvkfdln9ecc5422kqaeayikrqqf2la6" },
       tag: "Hardware & Macro",
     },
+    {
+      c1: creators.find((c) => c.handle === "fiatjaf") || { name: "fiatjaf", handle: "fiatjaf", npub: "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" },
+      c2: creators.find((c) => c.handle === "anon_bot") || { name: "anon_bot", handle: "anon_bot", npub: "npub1z4m7gkva6yxgvdyclc7zp0vz4ta0s2d9jh8g83w03tp5vdf3kzdsxana6p" },
+      tag: "Verified vs Sybil Bot",
+    },
   ];
 
   return (

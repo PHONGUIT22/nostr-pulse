@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, XCircle, Activity, Code } from "lucide-react";
+import { CheckCircle2, XCircle, Activity, Code, ShieldAlert } from "lucide-react";
 import { TrustScoreResult } from "@/lib/trust-score";
 import TrustScoreBadge from "@/components/detail/TrustScoreBadge";
 import EmbedBadgeModal from "@/components/detail/EmbedBadgeModal";
@@ -61,6 +61,21 @@ export default function TrustScoreCard({ trustData, name, npub = "" }: Props) {
                 {summary}
               </p>
             </div>
+
+            {summary.includes("Capped at 42") && (
+              <div className="p-4 bg-rose-950/50 border border-rose-800/80 rounded-2xl text-xs text-rose-300 flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <div className="font-bold text-rose-200 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <span>Anti-Sybil Guard Enforced</span>
+                    <span className="bg-rose-900/80 text-rose-200 px-2 py-0.5 rounded-full text-[10px] font-mono">Clamped at 42</span>
+                  </div>
+                  <p className="text-rose-300/90 leading-relaxed">
+                    This account attempted to accumulate points through metadata signals, but lacking both cryptographic NIP-05 DNS verification and core network proximity triggers deterministic damping capped strictly at 42 pts.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="p-4 bg-slate-950/40 rounded-2xl border border-slate-800/80 text-xs text-slate-400">
               💡 <strong>Why this matters:</strong> Nostr keypairs are free to generate. This algorithm analyzes NIP-05 DNS signatures, Core Network Proximity, Lightning payment endpoints, account longevity, and profile entropy to prevent Sybil impersonation.

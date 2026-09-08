@@ -15,6 +15,7 @@ export interface Creator {
   nip05?: string;
   about?: string;
   lud16?: string;
+  website?: string;
 }
 
 // 1. Safe helper to derive Hex Pubkey from npub

@@ -140,7 +140,7 @@ export function calculateTrustScore(
     networkProximityPoints = 25;
   } else {
     // Relay diversity: +3 pts per relay, up to 15 pts
-    const relayCount = extraSignals?.relayCount || profile.relays_connected || 0;
+    const relayCount = extraSignals?.relayCount ?? profile.relays_connected ?? 0;
     const relayDiversityPoints = Math.min(15, relayCount * 3);
 
     // NIP-65 Relay List presence: +10 pts
@@ -170,7 +170,7 @@ export function calculateTrustScore(
   const hasLud16 = Boolean(profile.lud16 && profile.lud16.includes("@"));
   const hasLnurlEndpoint = Boolean(profile.lud16 || profile.lud06);
   const lud16Points = hasLud16 ? 15 : 0;
-  const lnurlReadinessPoints = hasLnurlEndpoint ? 5 : 0;
+  const lnurlReadinessPoints = Boolean(profile.lud06) ? 5 : 0;
   const lightningPoints = lud16Points + lnurlReadinessPoints;
 
   rawScore += lightningPoints;
@@ -230,7 +230,9 @@ export function calculateTrustScore(
   // =========================================================================
   let metaPoints = 0;
   if (profile.picture && profile.picture.startsWith("http")) metaPoints += 5;
-  if (profile.about && profile.about.trim().length >= 10) metaPoints += 5;
+  if (profile.about && profile.about.trim().length >= 10) {
+    metaPoints += profile.website && profile.website.startsWith("https") ? 5 : 3;
+  }
   if (profile.website && profile.website.startsWith("https")) metaPoints += 5;
 
   // Anti-Spam Penalty: deduct 10 pts for hex-pattern handles

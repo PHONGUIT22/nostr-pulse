@@ -96,15 +96,16 @@
     "lud16": ""
   },
   {
-    "name": "Change this if you want",
-    "handle": "Change this if you want",
+    "name": "anon_bot",
+    "handle": "anon_bot",
     "npub": "npub1z4m7gkva6yxgvdyclc7zp0vz4ta0s2d9jh8g83w03tp5vdf3kzdsxana6p",
     "pubkey": "1577e4599dd10c863498fe3c20bd82aafaf829a595ce83c5cf8ac3463531b09b",
-    "score": 75,
-    "zapsReceived": "Active Node",
-    "picture": "https://api.dicebear.com/7.x/bottts/svg?seed=npub1z4m7gkva6yxgvdyclc7zp0vz4ta0s2d9jh8g83w03tp5vdf3kzdsxana6p",
-    "about": "Active Nostr builder and creator.",
+    "score": 42,
+    "zapsReceived": "0 Sats",
+    "picture": "https://api.dicebear.com/7.x/bottts/svg?seed=anon_bot_sybil_42",
+    "about": "Automated Sybil bot clone instance. Synthetic profile attempting to game metadata metrics without verified DNS identity or core network proximity.",
     "nip05": "",
+    "website": "https://sybil-cluster-farm.xyz",
     "lud16": "tardyketchup36@walletofsatoshi.com"
   },
   {
@@ -115,9 +116,9 @@
     "score": 88,
     "zapsReceived": "0 Sats",
     "picture": "https://fiatjaf.com/static/favicon.jpg",
-    "about": "~",
+    "about": "Creator of Nostr protocol (~)",
     "nip05": "_@fiatjaf.com",
-    "lud16": ""
+    "lud16": "fiatjaf@coinos.io"
   },
   {
     "name": "Derek Ross",

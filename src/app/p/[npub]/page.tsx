@@ -89,7 +89,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
 
   // 2. Calculate Trust Score from verified data with extra relay & activity signals
   const trustData = calculateTrustScore(profile, nip05Result, {
-    relayCount: profile.relays_connected || 4,
+    relayCount: profile.relays_connected ?? 0,
     hasNip65RelayList: Boolean(profile.relays_connected && profile.relays_connected > 2),
     hasRecentNotes: recentNotes.length > 0,
     accountCreatedAt: profile.created_at,
