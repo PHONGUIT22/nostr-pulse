@@ -336,7 +336,7 @@ export function parseCashuToken(tokenString: string): DecodedCashuInfo {
 }
 
 /**
- * 2. Verifies token validity with the Mint (with timeout to prevent hanging)
+ * 2. Verifies token validity with the Mint (Enforces Fail-Closed security)
  */
 export async function verifyTokenWithMint(tokenString: string): Promise<{ isValid: boolean; reason?: string }> {
   try {
@@ -344,7 +344,7 @@ export async function verifyTokenWithMint(tokenString: string): Promise<{ isVali
     const cleanMint = info.mint.replace(/\/+$/, "");
 
     // Initiate verification check with Mint
-    const verifyPromise = (async () => {
+    const verifyPromise = (async (): Promise<{ isValid: boolean; reason?: string }> => {
       try {
         const wallet = new Wallet(cleanMint);
 
@@ -355,7 +355,9 @@ export async function verifyTokenWithMint(tokenString: string): Promise<{ isVali
         }
 
         let spentStates: any[] = [];
-        if (typeof (wallet as any).checkProofStates === "function") {
+        if (typeof (wallet as any).checkProofsStates === "function") {
+          spentStates = await (wallet as any).checkProofsStates(info.proofs);
+        } else if (typeof (wallet as any).checkProofStates === "function") {
           spentStates = await (wallet as any).checkProofStates(info.proofs);
         } else if (typeof (wallet as any).checkProofsSpent === "function") {
           spentStates = await (wallet as any).checkProofsSpent(info.proofs);
@@ -365,22 +367,29 @@ export async function verifyTokenWithMint(tokenString: string): Promise<{ isVali
 
         if (Array.isArray(spentStates) && spentStates.length > 0) {
           const isSpent = spentStates.some(
-            (s: any) => s === true || s?.state === "SPENT" || s?.spent === true
+            (s: any) =>
+              s === true ||
+              s?.state === "SPENT" ||
+              s?.state === "spent" ||
+              s?.spent === true
           );
           if (isSpent) {
             return { isValid: false, reason: "This Cashu eCash token has already been spent/claimed." };
           }
+          return { isValid: true };
         }
-      } catch (e: any) {
-        console.warn("Mint verification check warning:", e);
-      }
 
-      return { isValid: true };
+        // Fail-Closed: If mint returned no proof states, cannot verify
+        return { isValid: false, reason: "Unable to verify token state with Mint" };
+      } catch (e: any) {
+        console.warn("Mint verification check error:", e);
+        return { isValid: false, reason: "Unable to verify token state with Mint" };
+      }
     })();
 
-    // 3-second timeout: skip if Mint server responds slowly to avoid blocking UI
-    const timeoutPromise = new Promise<{ isValid: boolean }>((resolve) =>
-      setTimeout(() => resolve({ isValid: true }), 3000)
+    // 4-second timeout: Fail-Closed if Mint server fails or times out
+    const timeoutPromise = new Promise<{ isValid: boolean; reason?: string }>((resolve) =>
+      setTimeout(() => resolve({ isValid: false, reason: "Unable to verify token state with Mint" }), 4000)
     );
 
     return await Promise.race([verifyPromise, timeoutPromise]);

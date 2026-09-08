@@ -177,17 +177,29 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
 
     try {
       const res = await claimNutZapToken(dec.token, dec.mint);
+      if (!res.success) {
+        throw new Error(res.error || "Failed to claim token.");
+      }
       setClaimResultMap((prev) => ({ ...prev, [event.id]: res }));
-      if (res.success) {
+      setTokenStatusMap((prev) => ({
+        ...prev,
+        [event.id]: { isValid: false, reason: "Claimed & swapped into fresh secret proofs." },
+      }));
+    } catch (err: any) {
+      const errMsg = err?.message || "Failed to claim token.";
+      const lowerErr = errMsg.toLowerCase();
+
+      // Detect spent token error and immediately switch UI badge to red SPENT
+      if (lowerErr.includes("already spent") || lowerErr.includes("token already spent")) {
         setTokenStatusMap((prev) => ({
           ...prev,
-          [event.id]: { isValid: false, reason: "Claimed & swapped into fresh secret proofs." },
+          [event.id]: { isValid: false, reason: "Token Already Spent" },
         }));
       }
-    } catch (err: any) {
+
       setClaimResultMap((prev) => ({
         ...prev,
-        [event.id]: { success: false, error: err.message || "Failed to claim token." },
+        [event.id]: { success: false, error: errMsg },
       }));
     } finally {
       setClaimingMap((prev) => ({ ...prev, [event.id]: false }));
@@ -476,12 +488,12 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                           {tokenStatus.isValid ? (
                             <>
                               <CheckCircle2 className="w-3 h-3" />
-                              UNSPENT (Ready to redeem)
+                              🟢 UNSPENT (Ready to redeem)
                             </>
                           ) : (
                             <>
                               <AlertCircle className="w-3 h-3" />
-                              SPENT ({tokenStatus.reason || "Already claimed"})
+                              🔴 SPENT ({tokenStatus.reason === "Token Already Spent" || !tokenStatus.reason ? "Already claimed" : tokenStatus.reason})
                             </>
                           )}
                         </span>
