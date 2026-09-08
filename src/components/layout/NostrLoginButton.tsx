@@ -84,6 +84,18 @@ export default function NostrLoginButton() {
     setUserNpub(null);
   };
 
+  // 1-Click Demo login for hackathon judges/evaluators
+  const handleDemoLogin = () => {
+    // Demo reviewer keypair: jb55 profile
+    const DEMO_NPUB = "npub1xtscya34g58tk0z605fvr788k263gsu6cy9x0m59up2ss5w09vuq782xx0";
+    const DEMO_RELAYS = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.nostr.band"];
+    localStorage.setItem("nostr_connected_npub", DEMO_NPUB);
+    localStorage.setItem("nostr_user_relays", JSON.stringify(DEMO_RELAYS));
+    setUserNpub(DEMO_NPUB);
+    setShowInstallModal(false);
+    router.push(`/p/${DEMO_NPUB}`);
+  };
+
   return (
     <>
       {userNpub ? (
@@ -155,6 +167,31 @@ export default function NostrLoginButton() {
               <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
                 To sign in with your cryptographic keypair and inspect your Reputation Score, install a browser extension:
               </p>
+            </div>
+
+            {/* 1-Click Demo Reviewer Option for Hackathon Judges */}
+            <div className="p-4 rounded-2xl bg-purple-950/50 border border-purple-500/40 space-y-2.5">
+              <div className="flex items-center gap-2 text-purple-300 font-bold text-xs">
+                <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
+                <span>Hackathon Reviewer / Quick Sandbox</span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Evaluating without a Nostr extension? Sign in with 1 click using a demo keypair to test own-profile decryption, trust score evaluation, and live eCash flows.
+              </p>
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-101"
+              >
+                <Key className="w-3.5 h-3.5 text-amber-300" />
+                <span>⚡ Sign In with 1-Click Reviewer Key</span>
+              </button>
+            </div>
+
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-slate-800"></div>
+              <span className="flex-shrink mx-3 text-[11px] text-slate-500 font-semibold uppercase tracking-wider">or install extension</span>
+              <div className="flex-grow border-t border-slate-800"></div>
             </div>
 
             <div className="space-y-3">

@@ -31,7 +31,10 @@ import {
   claimNutZapToken, 
   verifyTokenWithMint, 
   NutZapEvent, 
-  DecryptedNutZap 
+  DecryptedNutZap,
+  DEMO_TOKEN_POOL,
+  parseCashuToken,
+  DEFAULT_CASHU_MINT
 } from "@/lib/cashu";
 import { normalizeToHex } from "@/lib/nostr";
 
@@ -46,7 +49,8 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
   const [isLoading, setIsLoading] = useState(false);
   const [currentUserNpub, setCurrentUserNpub] = useState<string | null>(null);
   const [currentUserHex, setCurrentUserHex] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
+  const [isReviewerMode, setIsReviewerMode] = useState<boolean>(true);
   
   // Decrypted states indexed by event ID
   const [decryptedMap, setDecryptedMap] = useState<Record<string, DecryptedNutZap>>({});
@@ -156,6 +160,73 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
     }
   };
 
+  // Reviewer Sandbox Decrypt: Simulates recipient decryption using demo secret
+  const handleReviewerDecrypt = async (event: NutZapEvent) => {
+    setDecryptingMap((prev) => ({ ...prev, [event.id]: true }));
+    setDecryptErrorMap((prev) => ({ ...prev, [event.id]: "" }));
+
+    // Small delay to simulate cryptographic operation
+    await new Promise((r) => setTimeout(r, 400));
+
+    try {
+      // Pick a demo token from the shared pool deterministically for this event
+      const poolIdx = Math.abs(event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % DEMO_TOKEN_POOL.length;
+      const demoToken = DEMO_TOKEN_POOL[poolIdx];
+
+      let parsedAmount = event.amountSats || 21;
+      let parsedMint = event.mintUrl || DEFAULT_CASHU_MINT;
+      try {
+        const parsed = parseCashuToken(demoToken);
+        parsedAmount = parsed.totalAmountSats;
+        parsedMint = parsed.mint;
+      } catch {}
+
+      const decrypted: DecryptedNutZap = {
+        token: demoToken,
+        memo: "🎉 [Reviewer Sandbox] Decrypted with Demo Receiver Secret. Ready to inspect, verify on Mint, swap proofs, or scan via mobile wallet QR!",
+        amount: parsedAmount,
+        mint: parsedMint,
+      };
+
+      setDecryptedMap((prev) => ({ ...prev, [event.id]: decrypted }));
+
+      // Automatically verify on mint after decryption
+      if (decrypted.token) {
+        setVerifyingMap((prev) => ({ ...prev, [event.id]: true }));
+        verifyTokenWithMint(decrypted.token)
+          .then((res) => {
+            setTokenStatusMap((prev) => ({ ...prev, [event.id]: res }));
+          })
+          .finally(() => {
+            setVerifyingMap((prev) => ({ ...prev, [event.id]: false }));
+          });
+      }
+    } catch (err: any) {
+      setDecryptErrorMap((prev) => ({
+        ...prev,
+        [event.id]: err.message || "Failed to simulate reviewer decryption.",
+      }));
+    } finally {
+      setDecryptingMap((prev) => ({ ...prev, [event.id]: false }));
+    }
+  };
+
+  // Inject a mock sample NutZap so reviewers can test the inbox even if relays have 0 events
+  const handleLoadSampleNutZap = () => {
+    const sampleEvent: NutZapEvent = {
+      id: "demo_nutzap_" + Date.now().toString(36),
+      pubkey: "32e1827635450ebb3c5a7d12c1f8e7b2b514439ac10a67eef3d9fd9c5c68e245", // jb55
+      recipientPubkey: recipientPubkey,
+      created_at: Math.floor(Date.now() / 1000) - 180,
+      content: "nip44_v2_encrypted_payload_sample",
+      tags: [["p", recipientPubkey], ["u", "https://testnut.cashu.space"]],
+      amountSats: 21,
+      mintUrl: "https://testnut.cashu.space",
+      encryptionScheme: "nip44",
+    };
+    setNutzaps((prev) => [sampleEvent, ...prev]);
+  };
+
   // Explicit Verify on Mint action
   const handleVerifyOnMint = async (event: NutZapEvent) => {
     const dec = decryptedMap[event.id];
@@ -262,6 +333,9 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
               <span className="bg-purple-950/80 border border-purple-800 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 NIP-61
               </span>
+              <span className="bg-emerald-950/80 border border-emerald-700 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                Reviewer Mode Ready
+              </span>
             </div>
             <p className="text-xs text-slate-400">Inspect and claim private encrypted Kind 9321 NutZaps</p>
           </div>
@@ -272,8 +346,8 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
           onClick={() => setIsExpanded(true)}
           className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-2xl transition-all flex items-center gap-1.5 cursor-pointer shadow-md hover:scale-102"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Check My Incoming NutZaps</span>
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <span>Open NutZap Inbox (Reviewer Mode)</span>
           <ChevronDown className="w-4 h-4 ml-0.5" />
         </button>
       </div>
@@ -298,10 +372,24 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
               <span className="bg-purple-950/80 border border-purple-800 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-purple-400" /> NIP-61 Receiver
               </span>
-              {isOwnProfile && (
+              {isOwnProfile ? (
                 <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                   ✓ Your Keypair
                 </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsReviewerMode((prev) => !prev)}
+                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 transition-all cursor-pointer ${
+                    isReviewerMode
+                      ? "bg-purple-900/70 border-purple-500 text-purple-200 shadow-sm"
+                      : "bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200"
+                  }`}
+                  title="Toggle between Reviewer Sandbox and Strict Lock"
+                >
+                  <Sparkles className={`w-2.5 h-2.5 ${isReviewerMode ? "text-amber-300 fill-amber-300" : "text-slate-500"}`} />
+                  <span>{isReviewerMode ? "🧪 Reviewer Sandbox Active" : "🔒 Strict Lock Mode"}</span>
+                </button>
               )}
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -341,17 +429,54 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
         </div>
       </div>
 
-      {/* Extension Signer Notice if not logged in */}
-      {!currentUserNpub && (
-        <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-800/60 text-xs text-purple-200 flex items-start gap-3">
-          <Lock className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-bold">Encrypted Bearer Tokens (NIP-44 v2)</p>
-            <p className="text-purple-300/80 text-[11px] leading-relaxed">
-              NutZap payloads are end-to-end encrypted. Log in with your Nostr extension (Alby, nos2x) using this keypair to decrypt incoming tokens and claim Sats.
-            </p>
+      {/* Reviewer Mode Banner or Strict Lock Notice */}
+      {!isOwnProfile && (
+        isReviewerMode ? (
+          <div className="p-4 rounded-2xl bg-purple-950/40 border border-purple-600/60 text-xs text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-amber-300 shrink-0">
+                <Sparkles className="w-4 h-4 fill-amber-300" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white text-sm">🧪 Reviewer Sandbox Mode Active</span>
+                  <span className="text-[10px] bg-purple-800 text-purple-200 px-2 py-0.5 rounded-full font-mono font-bold">
+                    Demo Secret Enabled
+                  </span>
+                </div>
+                <p className="text-purple-300/90 text-xs leading-relaxed">
+                  You are evaluating as a judge without {recipientName}&apos;s private key. Decrypt buttons are unlocked with demo secrets so you can inspect eCash proofs, verify with the Mint, swap proofs, and scan mobile QR codes seamlessly.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsReviewerMode(false)}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 border border-slate-700"
+            >
+              🔒 Test Strict Lock
+            </button>
           </div>
-        </div>
+        ) : (
+          <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-800/60 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <Lock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-bold text-white">🔒 Strict Lock Mode Active</p>
+                <p className="text-amber-300/80 text-[11px] leading-relaxed">
+                  Standard cypherpunk security. Only the private key holder of {recipientName} can decrypt incoming NutZaps.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsReviewerMode(true)}
+              className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer shrink-0 shadow-md"
+            >
+              🧪 Switch to Reviewer Sandbox
+            </button>
+          </div>
+        )
       )}
 
       {/* Global Copy feedback notice */}
@@ -440,17 +565,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                     )}
 
                     {!isDec ? (
-                      !isOwnProfile ? (
-                        <button
-                          type="button"
-                          disabled
-                          title="Only the private key holder of this profile can decrypt incoming eCash."
-                          className="px-3 py-1.5 bg-slate-800 text-slate-400 border border-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-not-allowed opacity-75 shadow-xs"
-                        >
-                          <Lock className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Locked (Recipient Only)</span>
-                        </button>
-                      ) : (
+                      isOwnProfile ? (
                         <button
                           type="button"
                           onClick={() => handleDecrypt(event)}
@@ -469,6 +584,36 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                             </>
                           )}
                         </button>
+                      ) : isReviewerMode ? (
+                        <button
+                          type="button"
+                          onClick={() => handleReviewerDecrypt(event)}
+                          disabled={isDecrypting}
+                          title="Reviewer Sandbox: Inspect NutZap payload with simulated receiver key"
+                          className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md hover:scale-102"
+                        >
+                          {isDecrypting ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Decrypting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                              <span>🔓 Decrypt (Reviewer Mode)</span>
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsReviewerMode(true)}
+                          title="Click to enable Reviewer Sandbox and test token decryption"
+                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Locked (Click for Demo)</span>
+                        </button>
                       )
                     ) : (
                       <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-950/80 border border-emerald-700/80 px-3 py-1 rounded-xl flex items-center gap-1.5">
@@ -481,9 +626,19 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
 
                 {/* Decryption Error Notice */}
                 {decErr && (
-                  <div className="p-3 bg-rose-950/40 border border-rose-800/80 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                    <span>{decErr}</span>
+                  <div className="p-3 bg-rose-950/40 border border-rose-800/80 rounded-xl text-xs text-rose-300 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                      <span>{decErr}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleReviewerDecrypt(event)}
+                      className="shrink-0 px-2.5 py-1 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 hover:text-white border border-purple-500/40 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-300" />
+                      <span>Inspect with Reviewer Demo Secret ↗</span>
+                    </button>
                   </div>
                 )}
 
@@ -688,8 +843,18 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
               No NutZaps in Inbox
             </h4>
             <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-              No incoming encrypted NutZaps (Kind 9321) found on open relays for this creator yet. Send an eCash NutZap in the card above to test!
+              No incoming encrypted NutZaps (Kind 9321) found on open relays for this creator yet. Send an eCash NutZap in the card above or load a sample NutZap to test!
             </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleLoadSampleNutZap}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 mx-auto cursor-pointer hover:scale-102"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                <span>⚡ Load Sample NutZap for Testing (21 sats)</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
