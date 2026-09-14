@@ -168,9 +168,9 @@ export default async function CreatorProfilePage({ params }: PageProps) {
                   <p className="text-slate-500 font-medium text-sm mt-0.5">{handle}</p>
                 )}
                 
-                <div className="flex items-center gap-2 mt-2 font-mono text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60 w-fit">
+                <div suppressHydrationWarning className="flex items-center gap-2 mt-2 font-mono text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60 w-fit">
                   <Key className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{npubShort}</span>
+                  <span suppressHydrationWarning>{npubShort}</span>
                 </div>
               </div>
             </div>
@@ -180,15 +180,15 @@ export default async function CreatorProfilePage({ params }: PageProps) {
               <TrustScoreBadge score={trustData.score} tier={trustData.tier} />
               
               {lud16 && (
-                <div className="bg-amber-50 border border-amber-200/80 p-4 rounded-3xl shrink-0 flex items-center gap-3 w-full sm:w-auto h-full">
-                  <div className="w-10 h-10 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-xs">
+                <div suppressHydrationWarning className="bg-amber-50 border border-amber-200/80 p-4 rounded-3xl shrink-0 flex items-center gap-3 w-full sm:w-auto h-full">
+                  <div suppressHydrationWarning className="w-10 h-10 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-xs">
                     <Zap className="w-5 h-5 fill-white" />
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
                       Lightning Address (LNURL)
                     </span>
-                    <span className="font-bold text-slate-900 text-xs font-mono block truncate max-w-[160px]">
+                    <span suppressHydrationWarning className="font-bold text-slate-900 text-xs font-mono block truncate max-w-[160px]">
                       {lud16}
                     </span>
                   </div>
@@ -268,10 +268,10 @@ export default async function CreatorProfilePage({ params }: PageProps) {
               </div>
               <h4 className="font-bold text-slate-900 text-sm mb-3">Nostr Public Identity</h4>
               
-              <div className="space-y-3 text-xs">
+              <div suppressHydrationWarning className="space-y-3 text-xs">
                 <div>
                   <span className="text-slate-400 block font-medium">Bech32 Encoded (npub):</span>
-                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-mono text-[11px] text-slate-600 break-all mt-1 select-all">
+                  <div suppressHydrationWarning className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-mono text-[11px] text-slate-600 break-all mt-1 select-all">
                     {encodedNpub}
                   </div>
                 </div>
@@ -279,7 +279,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
                 {profile.pubkey && (
                   <div>
                     <span className="text-slate-400 block font-medium">Hex Pubkey:</span>
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-mono text-[11px] text-slate-600 break-all mt-1 select-all">
+                    <div suppressHydrationWarning className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-mono text-[11px] text-slate-600 break-all mt-1 select-all">
                       {profile.pubkey}
                     </div>
                   </div>

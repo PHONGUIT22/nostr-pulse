@@ -260,7 +260,7 @@ export default function LiveZapFeed({ pubkey, name }: Props) {
                     <span className="font-bold text-xs text-slate-200 truncate font-mono">
                       {item.senderName}
                     </span>
-                    <span className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
+                    <span suppressHydrationWarning className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
                       <Clock className="w-3 h-3" /> {timeAgo(item.timestamp)}
                     </span>
                     {item.relaySource && (

@@ -543,7 +543,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                           <Lock className="w-2.5 h-2.5" />
                           {event.encryptionScheme?.toUpperCase() || "NIP-44"} Encrypted
                         </span>
-                        <span className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
+                        <span suppressHydrationWarning className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
                           <Clock className="w-3 h-3" /> {timeAgo(event.created_at)}
                         </span>
                       </div>
