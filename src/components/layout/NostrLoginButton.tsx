@@ -19,10 +19,12 @@ import { fetchUserRelays, mergeRelays } from "@/lib/nostr";
 export default function NostrLoginButton() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [userNpub, setUserNpub] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     const saved = localStorage.getItem("nostr_connected_npub");
     if (saved) {
       setUserNpub(saved);
@@ -98,15 +100,16 @@ export default function NostrLoginButton() {
 
   return (
     <>
-      {userNpub ? (
+      {mounted && userNpub ? (
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push(`/p/${userNpub}`)}
             className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3.5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
             title="View My Trust Score & Live Zaps"
+            suppressHydrationWarning
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>My Trust Score ({userNpub.slice(0, 8)}...)</span>
+            <span suppressHydrationWarning>My Trust Score ({userNpub.slice(0, 8)}...)</span>
           </button>
 
           <button
@@ -122,6 +125,7 @@ export default function NostrLoginButton() {
           onClick={handleNip07Login}
           disabled={isConnecting}
           className="bg-slate-900 hover:bg-purple-600 text-white font-bold px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-full transition-all text-xs sm:text-sm shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          suppressHydrationWarning
         >
           {isConnecting ? (
             <>

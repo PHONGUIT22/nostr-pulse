@@ -6,15 +6,18 @@ import { getNetworkMode, setNetworkMode, type NetworkMode } from "@/lib/network-
 
 export default function NetworkModeToggle() {
   const [mode, setMode] = useState<NetworkMode>("fast");
+  const [mounted, setMounted] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
+    setMounted(true);
     setMode(getNetworkMode());
   }, []);
 
   const handleToggle = () => {
-    const newMode: NetworkMode = mode === "fast" ? "p2p" : "fast";
+    const currentMode = mounted ? mode : getNetworkMode();
+    const newMode: NetworkMode = currentMode === "fast" ? "p2p" : "fast";
     setNetworkMode(newMode);
     setMode(newMode);
 
@@ -28,27 +31,30 @@ export default function NetworkModeToggle() {
     setTimeout(() => setShowToast(false), 4000);
   };
 
+  const activeMode = mounted ? mode : "fast";
+
   return (
     <>
       <button
         type="button"
         onClick={handleToggle}
+        suppressHydrationWarning
         className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border shadow-sm hover:scale-105"
         style={{
-          background: mode === "fast" ? undefined : undefined,
+          background: activeMode === "fast" ? undefined : undefined,
         }}
-        title={mode === "fast" ? "Fast Edge Cache (Primal Accelerated)" : "Pure P2P (Direct WebSocket Relays)"}
+        title={activeMode === "fast" ? "Fast Edge Cache (Primal Accelerated)" : "Pure P2P (Direct WebSocket Relays)"}
       >
-        {mode === "fast" ? (
+        {activeMode === "fast" ? (
           <>
-            <span className="flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-emerald-50 border-amber-200/80 text-amber-700 px-2.5 py-1 rounded-full border">
+            <span suppressHydrationWarning className="flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-emerald-50 border-amber-200/80 text-amber-700 px-2.5 py-1 rounded-full border">
               <Zap className="w-3.5 h-3.5 text-amber-500" />
               <span>⚡ Fast Cache</span>
             </span>
           </>
         ) : (
           <>
-            <span className="flex items-center gap-1.5 bg-purple-50 border-purple-300/80 text-purple-700 px-2.5 py-1 rounded-full border relative">
+            <span suppressHydrationWarning className="flex items-center gap-1.5 bg-purple-50 border-purple-300/80 text-purple-700 px-2.5 py-1 rounded-full border relative">
               <Shield className="w-3.5 h-3.5 text-purple-500" />
               <span>🛡️ Pure P2P</span>
               {/* Ping pulse indicator */}

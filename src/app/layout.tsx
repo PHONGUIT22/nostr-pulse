@@ -5,7 +5,11 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nostrpulse.com"),
@@ -41,8 +45,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} font-sans`}>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const observer = new MutationObserver(function(mutations) {
+                  for (let i = 0; i < mutations.length; i++) {
+                    const m = mutations[i];
+                    if (m.type === 'attributes' && m.attributeName && m.attributeName.indexOf('bis_') === 0) {
+                      m.target.removeAttribute(m.attributeName);
+                    }
+                  }
+                });
+                observer.observe(document.documentElement, { attributes: true, subtree: true });
+              })();
+            `,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -99,7 +120,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} bg-[#FDFDFD] text-slate-900 antialiased flex flex-col min-h-screen`}>
+      <body suppressHydrationWarning className={`${inter.className} font-sans bg-[#FDFDFD] text-slate-900 antialiased flex flex-col min-h-screen`}>
         <Script id="nostr-error-guard" strategy="beforeInteractive">
           {`
             window.addEventListener('unhandledrejection', function(event) {
