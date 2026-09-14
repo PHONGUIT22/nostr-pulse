@@ -17,406 +17,249 @@
 
 <p align="center">
   <a href="https://nostrpulse.vercel.app/"><b>🚀 Launch Live Explorer »</b></a> •
-  <a href="https://nostrpulse.vercel.app/about"><b>Methodology</b></a> •
-  <a href="https://nostrpulse.vercel.app/relays"><b>Relay Telemetry</b></a> •
-  <a href="https://nostrpulse.vercel.app/compare"><b>Versus Engine</b></a> •
-  <a href="#-quick-evaluation-guide-for-judges-live-interactive-demo"><b>🧪 Interactive Demo Guide</b></a>
+  <a href="#-happy-path-evaluation-guide-for-judges"><b>Evaluation Guide</b></a> •
+  <a href="#-finished-vs-unfinished-matrix"><b>Finished vs. Unfinished</b></a> •
+  <a href="#-clean-machine-setup--reproduction"><b>Local Setup</b></a> •
+  <a href="https://nostrpulse.vercel.app/compare"><b>Versus Engine</b></a>
 </p>
 
 </div>
 
 ---
 
-## 🧪 Quick Evaluation Guide for Judges (Live Interactive Demo)
+## 📋 Hackathon Submission Details
 
-To evaluate **NostrPulse** without spending real Bitcoin or installing browser extensions, test the full-cycle **NUT-00 V4 CBOR eCash (`cashuB`)** pipeline using our live Testnet mint integration:
+| Field | Detail |
+| :--- | :--- |
+| **Project Name** | **NostrPulse** |
+| **Hackathon** | **BOSS Battle Hackathon** (Bitshala) |
+| **Submission Track** | **Track 2: Freedom Stack** |
+| **Team / Author** | **Nguyen Hac Phong** ([@PHONGUIT22](https://github.com/PHONGUIT22)) — *Solo Entry* |
+| **Live Web App** | [https://nostrpulse.vercel.app](https://nostrpulse.vercel.app) |
+| **Source Repository** | [https://github.com/PHONGUIT22/nostr-pulse](https://github.com/PHONGUIT22/nostr-pulse) |
+| **License** | Open-source under the [MIT License](LICENSE) |
 
-### Step 1: Send a NIP-61 NutZap (Sender Pipeline)
-1. Visit **[Jack's Profile](https://nostrpulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)** on the live deployment.
-2. In the **Support jack** card, switch to **Cashu eCash (NIP-61)** ➔ **Paste Token**.
-3. Ensure the target mint is set to **Cashu Testnut (Demo / Test Sats)**.
-4. Copy and paste this live **NUT-00 V4 CBOR Token (21 Sats)** into the token box:
+---
+
+## 📹 Walkthrough Demo Video
+
+> 📺 **Demo Walkthrough Video (3–5 Minutes):**  
+> **[Watch the NostrPulse Walkthrough on YouTube](https://youtu.be/pWb9w-7-gQ8)** *(or download the direct MP4 from project releases)*  
+> *A concise walkthrough demonstrating: 1-click Anti-Sybil inspection, NIP-05 DNS cryptographic verification, in-app testnet eCash minting, and the complete 2-way NIP-61 NutZap receiver inbox proof-swap.*
+
+---
+
+## 🌐 The Problem & The Freedom Tech Approach
+
+Decentralized social protocols like Nostr eliminate centralized deplatforming, but introduce two structural vulnerabilities for developers and users:
+
+### 1. Identity is Computationally Free (The Sybil Flood)
+Anyone can spin up 10,000 Nostr keypairs (`npub`) in two seconds for zero satoshis. Scammers clone creator bios, scrape avatars, and spam open relays with synthetic identities.
+* **Why centralized KYC fails:** Uploading passports or phone numbers destroys cypherpunk privacy and introduces centralized honeypots.
+* **Why heavy graph math fails:** Full Web-of-Trust graph traversals (like EigenTrust) sound elegant on paper, but computing multi-hop graph matrices client-side freezes mobile browsers and crashes tabs.
+
+### 2. Lightning Tipping is Synchronous and Fragile
+Standard Lightning Zaps (NIP-57) require real-time coordination. If a creator's phone goes to sleep, their node loses power, or their routing channels run out of inbound liquidity, payments fail immediately. Fans want to tip 100 sats; instead, they receive a routing timeout.
+
+---
+
+### How NostrPulse Solves Both
 
 ```text
-cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcIOkYWEQYXN4QDIyZmM3YWNjMDllZWJlOWNiNjRhMDk3MTQ5MTViYTQ0NDExMDZkM2NlNmQ4YjJkM2FhOWIyNjA0ODY4NzdkYzhhY1ghA1CebGtQCkyvj97TNc6SKjnUepmelsxulOTl5LWm795AYWSjYWVYIFyb9BEKNmcAGJPYyEjYpUrPxdOMVtWCEBWbQxQWhRNGYXNYIIf6SixhZJg6h-BzUsLKyO7p18Zh-hEC-me3JwDhwof0YXJYIKMKKQEkzzMqZQ-JiPYo1VNc9N_AtHixGCNUgk1a429dpGFhBGFzeEA3NzU2NTE0Njg1MDliMDAwOWYxZjRmYzJiYTdmMGZkZjU0YTJlMWI0MDdkODA4ZDljOTZjNTUyNzczODkwYjVkYWNYIQOSWDT_Ur5wOlJMruf0RKnjV5MW4pzeDKp6eUkwRCiUeGFko2FlWCDhkwEj3Ck0gHrJ_R9Ur84Wvi-ls5a7aoFmKojvA3n53GFzWCBrhNbOgQV9ZmOhkb-_2m_BF-sYApUqUrLNSskW4aP1LmFyWCBCP8XkPVN6n8VPMU7UYGcqR4n_lzsmui5T6xxyy9RHL6RhYQFhc3hAYTgzZGU5OTUyMjJjNmQwNThjYTY0ZjI0MGQxNzk1ZjRiZmFiYTMzMDQyMzkxN2RhMTZmNTJjZjJjNTNjNDQwN2FjWCED58b_wlPN8ombHrjJ7nBjxDGnBZw95NmoZbv0JGq0qEZhZKNhZVggBG6UlWOjPrz0BD7uKygbu24fJx9l_tNMUERho0yLxYVhc1ggMZfbVxdLa775b3VnME__GN8PGqQbqdoU0Ycm4mdehXlhclggu1x5J55-wpi0LWELGtH5_jIjo2nmLV6_OE2cyTpUqKg
++-----------------------------------------------------------------------------------+
+|                           NOSTRPULSE FREEDOM STACK                                |
++-----------------------------------------------------------------------------------+
+|  1. SOVEREIGN REPUTATION LAYER (Sub-50ms Heuristic Matrix)                        |
+|     - NIP-05 DNS Cryptographic Verification (Domain ownership anchor)             |
+|     - Core Network Seed Proximity & NIP-65 dynamic relay diversity                 |
+|     - Anti-Sybil Damping Guard: Clamps unverified identities strictly at 42 pts   |
++-----------------------------------------------------------------------------------+
+|  2. ASYNCHRONOUS VALUE SETTLEMENT LAYER (Dual-Rail Micro-Payments)                |
+|     - Synchronous Rail: NIP-57 Lightning Zaps with WebLN auto-dispatch            |
+|     - Asynchronous Rail: NIP-61 Cashu NutZaps (Kind 9321 bearer eCash delivery)   |
+|     - NIP-44 v2 E2E Encryption: Front-running and MEV-immune bearer token payload |
+|     - Native RFC 8949 Binary CBOR Decoder: Sub-millisecond parsing, zero-npm deps |
++-----------------------------------------------------------------------------------+
+|  3. DUAL NETWORK TRANSPORT ENGINE                                                 |
+|     - Fast Edge Cache: Accelerated metadata telemetry via Primal edge             |
+|     - Pure P2P Mode: 100% direct browser-to-relay WebSockets via SimplePool       |
++-----------------------------------------------------------------------------------+
 ```
 
-5. Click **Verify eCash Token**: Our custom zero-dependency RFC 8949 decoder decodes the binary CBOR map and checks proof states live with the mint.
-6. Click **Send Sats (NutZap)**: The token is encrypted end-to-end via NIP-44 v2 and broadcasted directly to 5+ open relays as a **Kind 9321** event.
+---
 
-### Step 2: Receive, Decrypt & 1-Click Claim (Receiver Pipeline)
-1. Log in with your NIP-07 browser extension (Alby, nos2x) using the header **Connect** button.
-2. Navigate to your own profile or inspect the **Incoming eCash NutZaps (Kind 9321)** inbox.
-3. Observe the decentralized relay query polling for incoming Kind 9321 events tagged with `#p: [<your_pubkey>]`.
-4. Click **🔓 Decrypt & View Token**: Calls `window.nostr.nip44.decrypt` to reveal the private memo and bearer token.
+## 🧪 Happy Path Evaluation Guide for Judges
+
+You can evaluate the complete system without installing browser extensions or spending real money:
+
+### Step 1: 1-Click Anti-Sybil Matrix Inspection
+1. Navigate to the **[NostrPulse Homepage](https://nostrpulse.vercel.app/)**.
+2. Immediately below the search bar, locate the **Live Interactive Demo** section.
+3. Click **🔥 Inspect Verified Builder** ([fiatjaf](https://nostrpulse.vercel.app/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6)):
+   - Observe the **88 pts** score with the emerald `Verified Builder` tier.
+   - Inspect the verified NIP-05 DNS signature (`_@fiatjaf.com`) and core seed node network proximity (25/25 pts).
+4. Click **⚠️ Inspect Sybil Bot Clone** ([anon_bot](https://nostrpulse.vercel.app/p/anon_bot)):
+   - Observe how synthetic profile metadata (avatar, bio, external link) accumulated 45+ raw points.
+   - Notice the **Anti-Sybil Guard Enforced** banner: because it lacks verified DNS and core network proximity, its score is **clamped at 42 pts** (`Unverified / Potential Bot`).
+
+---
+
+### Step 2: Send a NIP-61 NutZap (Sender Pipeline)
+1. On any creator profile (e.g., [Jack](https://nostrpulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)), scroll to the **Support Creator** card.
+2. Switch payment tab to **Cashu eCash (NIP-61)**.
+3. Obtain a testnet Cashu token via either method:
+   - **Method A (In-App 1-Click Mint):** Switch to **1-Click Mint**, select a satoshi amount (e.g. 21 Sats), and settle the testnet invoice.
+   - **Method B (Free External Testnet Sats):** Visit [cashu.me](https://cashu.me), set your mint to `https://testnut.cashu.space`, claim free testnet sats, and copy the `cashuB...` or `cashuA...` token.
+4. Paste the token into the input box and click **Verify eCash Token**.
+   - Watch our zero-dependency RFC 8949 binary CBOR decoder unpack the proofs and verify spend-state directly against the mint (`https://testnut.cashu.space`).
+5. Click **Send Sats (NutZap)**:
+   - The token is sealed via **NIP-44 v2 ChaCha20-Poly1305 authenticated encryption** using a Diffie-Hellman shared secret derived from the recipient's public key.
+   - The encrypted payload is broadcasted concurrently across 5+ public Nostr relays as a **Kind 9321** event.
+
+---
+
+### Step 3: Decrypt & Claim to Mint in NutZap Inbox (Receiver Pipeline)
+1. Connect with your Nostr extension (Alby, nos2x) using the **Connect** button in the header, or visit your own profile.
+2. Scroll to the **Incoming eCash NutZaps (Kind 9321)** inbox.
+3. Observe the relay query fetching incoming Kind 9321 events tagged with `#p: [<your_pubkey>]`.
+4. Click **🔓 Decrypt & View Token**:
+   - Triggers `window.nostr.nip44.decrypt` to unveil the private memo and bearer token.
 5. Click **⚡ Claim to Mint (Swap Proofs)**:
-   - Auto-expands truncated 16-hex CBOR keyset IDs to full 66-hex mint keyset IDs.
-   - Executes an atomic proof swap at the Mint (`wallet.receive`).
-   - Generates brand new secret proofs held solely by you, invalidating the sender's original proofs.
-   - Updates the live status badge to `🟢 Claimed & Swapped`.
-
-> [!NOTE]
-> Cashu proofs are cryptographic bearer assets. If previous evaluators have already claimed the test token above, you can use **1-Click Mint & Send** within the card to mint fresh test tokens via Testnet Lightning quotes.
+   - **Keyset Auto-Expansion:** Automatically queries mint keysets, expanding truncated 16-hex CBOR keyset IDs to full 66-hex IDs to prevent `MintOperationError: Inputs: 0`.
+   - **Atomic Proof Swap:** Executes `wallet.receive()`, instructing the mint to invalidate the sender's secrets and issue fresh, blinded proofs held exclusively by you.
+   - **NUT-07 Double-Spend Verification:** The token status updates live to `🟢 Claimed & Swapped`. Attempting to reclaim marks it as `🔴 SPENT`.
 
 ---
 
-## 🌐 The Problem & The Freedom Stack Solution
+## 📊 Finished vs. Unfinished Matrix
 
-Open protocols like Nostr eliminate centralized deplatforming, but introduce two structural vulnerabilities:
-1. **Sybil Floods & Impersonation:** Keypair generation (`npub`) costs $0$, making bot farms, clone accounts, and impersonators rampant. Heavy Web-of-Trust graph traversals crash mobile and edge web browsers.
-2. **Synchronous Payment Fragility:** Traditional Lightning Zaps (NIP-57) require the recipient's Lightning node to be constantly online and have sufficient inbound liquidity routing channels. If a creator is offline, tips fail.
+We believe in radical transparency regarding what was built and tested during the hackathon versus planned future iterations:
 
-### The Freedom Tech Architecture
-
-```mermaid
-flowchart TD
-    subgraph Client["Client Entrypoint & Extensions"]
-        User["User / Evaluator"]
-        Signer["NIP-07 Signer (Alby, nos2x)"]
-        User <--> Signer
-    end
-
-    subgraph Identity["1. Sovereign Identity Layer"]
-        NIP01["NIP-01: WebSocket Relay Aggregation"]
-        NIP05["NIP-05: Cryptographic DNS Verification"]
-        NIP65["NIP-65: Dynamic Creator Outbox Mesh"]
-    end
-
-    subgraph Settlement["2. Dual-Rail Value Settlement"]
-        NIP57["NIP-57: Lightning Zaps (WebLN Auto-Dispatch)"]
-        NIP61["NIP-61: Cashu NutZaps (Kind 9321 Bearer Delivery)"]
-        NIP44["NIP-44 v2: E2E ChaCha20-Poly1305 Encryption"]
-        NUT00["NUT-00 V4: Native RFC 8949 CBOR Decoding"]
-    end
-
-    subgraph Engines["3. Core Processing Engines"]
-        TrustEngine["5-Pillar Anti-Sybil Trust Engine: Deterministic Edge Matrix (< 50ms) + 42-Pt Cap"]
-        eCashEngine["Full-Cycle Cashu eCash Engine: 1-Click Minting, Keyset Expansion & Proof Swap"]
-    end
-
-    subgraph Transport["4. Dual Network Transport Engine"]
-        FastCache["⚡ Fast Cache Mode: Primal Edge Accelerated Telemetry"]
-        PureP2P["🛡️ Pure P2P Mode: 100% Direct Relay WebSockets (SimplePool)"]
-    end
-
-    Client --> Identity
-    Client --> Settlement
-    Identity --> TrustEngine
-    Settlement --> eCashEngine
-    TrustEngine --> Transport
-    eCashEngine --> Transport
-```
-
-| Dimension | Legacy Web2 Platforms | Standard Nostr Clients | NostrPulse (Freedom Stack) |
-| :--- | :--- | :--- | :--- |
-| **Identity** | Centralized DB, arbitrary bans | Raw, unranked `npub` keypairs | **Cryptographic Sovereign Keys (`NIP-01/19`) + 5-Pillar Trust Matrix** |
-| **Sybil Resistance** | Black-box KYC & phone tracking | Expensive client-side graph traversal | **Deterministic Multi-Signal Rule Matrix with Anti-Sybil Guard** |
-| **Value Transfer** | 30% platform tax, frozen payouts | Synchronous Lightning only (NIP-57) | **Dual-Rail: Lightning (NIP-57) + Asynchronous Cashu eCash (NIP-61)** |
-| **eCash Lifecycle** | None (Custodial fiat) | Broadcast-only (No receiver flow) | **Full-Cycle: 1-Click Mint ➔ Encrypt ➔ Gossip ➔ Decrypt ➔ Proof Swap** |
-| **Network Autonomy** | Proprietary corporate servers | Often hardcoded to single indexer | **Dual-Engine: Instant Switch between Fast Cache & Pure P2P Mode** |
+| Feature / Subsystem | Status | Implementation Details & Test Coverage |
+| :--- | :---: | :--- |
+| **5-Pillar Heuristic Anti-Sybil Matrix** | **Finished** | 100% client-side deterministic scoring (< 50ms) across DNS, graph proximity, V4V readiness, longevity, and entropy. |
+| **The 42-Point Anti-Sybil Damping Guard** | **Finished** | Algorithmic ceiling strictly clamping unverified accounts with isolated network presence to 42 points max. |
+| **Zero-Dependency RFC 8949 CBOR Decoder** | **Finished** | Handcrafted parser in [`src/lib/cashu.ts`](src/lib/cashu.ts) supporting Major types 0–7 and 64-bit integers with zero npm dependencies. |
+| **Full-Cycle NIP-61 NutZap Sender Pipeline** | **Finished** | Supports BOLT-11 quote minting, NIP-44 v2 encryption, and Kind 9321 multi-relay broadcasting. |
+| **NIP-61 NutZap Receiver Inbox** | **Finished** | Open-relay ingestion for Kind 9321 events, client-side NIP-44 decryption, and live event refresh. |
+| **Truncated Keyset ID Auto-Expansion** | **Finished** | Resolves the 16-hex vs 66-hex Cashu V4 mismatch via `/v1/keysets` prefix matching before proof swap. |
+| **Fail-Closed NUT-07 Double-Spend Shield** | **Finished** | Real-time proof-state checks against the mint; fails closed on unresponsive endpoints to prevent false positives. |
+| **Dual Network Engine (Fast vs Pure P2P)** | **Finished** | Global navbar toggle switching between Primal Edge cache and 100% direct WebSocket connections via `SimplePool`. |
+| **Head-to-Head Compare Arena** | **Finished** | Side-by-side identity and trust matrix comparison at `/compare`. |
+| **Relay Telemetry Monitor** | **Finished** | Live latency and WebSocket connection health dashboard across decentralized relays at `/relays`. |
+| **NUT-11 P2PK Recipient Locks** | *Scoped Next* | Mint-enforced recipient public key locks for eCash proofs; awaiting widespread testnet mint deployment. |
+| **Automated Auto-Melt Liquidity Service** | *Scoped Next* | Threshold-based auto-swapping from accumulated eCash tokens into native Lightning node balance. |
+| **NIP-90 Data Vending Machine Agent Settlement** | *Scoped Next* | Autonomous machine-to-machine reputation verifications and micro-settlements. |
 
 ---
 
-## 🥜 Full-Cycle NIP-61 NutZap Implementation (2-Way Flow)
+## ⚡ Clean-Machine Setup & Reproduction
 
-NostrPulse completes the entire economic loop of **NIP-61 (NutZaps)**, enabling both sending and receiving privacy-preserving Chaumian eCash.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Sender as Sender (Tipper)
-    participant Mint as Cashu Mint Node
-    participant Signer as NIP-07 Signer (Alby / nos2x)
-    participant Relays as Open Relay Mesh
-    actor Receiver as Receiver (Creator)
-
-    Note over Sender,Mint: Phase 1: 1-Click Minting or Token Input (NUT-04)
-    Sender->>Mint: Request BOLT-11 Quote (NUT-04)
-    Mint-->>Sender: Return Lightning Invoice & Hash
-    Sender->>Sender: Settle invoice via WebLN or QR code
-    Sender->>Mint: Poll Quote & Mint Tokens
-    Mint-->>Sender: Return Fresh Secret Proofs (cashuA / cashuB)
-
-    Note over Sender,Relays: Phase 2: E2E Encryption & Kind 9321 Broadcast
-    Sender->>Sender: Construct NutZap Payload { token, memo, amount, mint }
-    Sender->>Signer: Request NIP-44 v2 encryption with recipient pubkey
-    Signer-->>Sender: Return encrypted ciphertext (MEV / Front-running immune)
-    Sender->>Relays: Publish Kind 9321 event (tags: p, amount, u, encryption)
-    Relays-->>Relays: Gossip across multi-relay mesh
-
-    Note over Receiver,Relays: Phase 3: Relay Ingestion & NIP-44 Decrypt (Inbox)
-    Receiver->>Relays: Query incoming Kind 9321 events (#p: [recipientPubkey])
-    Relays-->>Receiver: Return matching encrypted events
-    Receiver->>Signer: window.nostr.nip44.decrypt(senderPubkey, content)
-    Signer-->>Receiver: Decrypted plaintext payload { token, memo, amount, mint }
-
-    Note over Receiver,Mint: Phase 4: Keyset Auto-Expansion & Proof Swap (NUT-03)
-    Receiver->>Mint: GET /v1/keysets (Fetch active keysets)
-    Mint-->>Receiver: Return full 66-hex active keyset IDs
-    Receiver->>Receiver: Auto-expand truncated 16-hex CBOR keyset IDs to full 66-hex IDs
-    Receiver->>Mint: wallet.receive(canonicalFlatToken) proof swap
-    Mint-->>Mint: Invalidate sender proofs (NUT-07 SPENT state)
-    Mint-->>Receiver: Issue brand new unspent bearer proofs
-    Note over Receiver: Settlement Complete: Recipient holds new private eCash
-```
-
-### 1. Sender Pipeline
-* **1-Click In-App Minting via BOLT-11 (NUT-04):** Users specify Satoshi amounts; NostrPulse requests a mint quote from the chosen Cashu mint, presents a lightning invoice via WebLN or QR, polls payment status, and mints raw proofs directly inside the browser.
-* **Paste Existing Tokens:** Supports both legacy `cashuA` (V3 Base64 JSON) and next-gen `cashuB` (V4 binary CBOR).
-* **NIP-44 v2 Payload Encryption (Front-Running & MEV Immunity):** Cashu tokens are cryptographic **bearer assets**. Broadcasting plain tokens across public relays exposes them to immediate theft by malicious relay operators or scrapers. NostrPulse seals the payload using **NIP-44 v2 ChaCha20-Poly1305 Diffie-Hellman encryption** (with NIP-04 fallback):
-  ```typescript
-  const secretNutZapPayload = JSON.stringify({
-    token: cashuToken.trim(),
-    memo: comment?.trim() || "Value-4-Value eCash NutZap 🥜",
-    amount: amountSats,
-    mint: cleanMint,
-    created_at: Math.floor(Date.now() / 1000),
-  });
-  ```
-* **Multi-Relay Gossip Broadcast:** Encrypted Kind 9321 events are signed via NIP-07 (`window.nostr`) or ephemeral key and published concurrently to a resilient relay mesh (`relay.damus.io`, `nos.lol`, `nostr.band`, `purplerelay.com`, `relay.current.fyi`).
-
-#### Protocol Specification: Kind 9321 NutZap Event
-```json
-{
-  "kind": 9321,
-  "pubkey": "82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2",
-  "created_at": 1725782400,
-  "tags": [
-    ["p", "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"],
-    ["amount", "21000"],
-    ["u", "https://testnut.cashu.space"],
-    ["encryption", "nip44"],
-    ["alt", "Encrypted NutZap: 21 Sats in Chaumian eCash"]
-  ],
-  "content": "<base64_nip44_chacha20poly1305_ciphertext>",
-  "id": "e4f8...",
-  "sig": "b1a2..."
-}
-```
-
-### 2. Receiver Pipeline (NutZap Inbox)
-* **Decentralized Relay Ingestion:** The NutZap Inbox queries open relays for `kinds: [9321]` filtered by `#p: [<userHexPubkey>]` with query timeouts.
-* **Client-Side Decryption:** The user clicks **🔓 Decrypt & View Token**, invoking `window.nostr.nip44.decrypt(event.pubkey, event.content)`.
-* **Private Memo & Bearer Token Extraction:** Safely displays sender note, amount in sats, origin mint, and decrypted token string.
-
-### 3. Breakthrough: Truncated 16-Hex Keyset Auto-Expansion & 1-Click Swap
-In the Cashu V4 CBOR specification (NUT-00), keyset IDs are truncated to 16 hex characters to minimize QR code and payload size. However, Cashu Mint nodes and SDKs (`@cashu/cashu-ts` v4) expect full 66-hex Keyset IDs (e.g. `009a...`), causing standard wallets to throw:
-```text
-MintOperationError: Inputs: 0, Outputs: 0
-```
-**NostrPulse engineered an intelligent keyset resolution engine:**
-1. Dynamically queries `${cleanMint}/v1/keysets` with a 4s timeout (fallback to wallet keychain cache).
-2. Auto-expands truncated 16-hex keyset IDs into full 66-hex IDs by matching keyset prefixes:
-   ```typescript
-   const normalizedProofs = parsed.proofs.map((proof: any) => {
-     const rawId = String(proof.id);
-     const fullMatch = mintKeysetIds.find((fullId) => fullId === rawId || fullId.startsWith(rawId));
-     return fullMatch && fullMatch !== rawId ? { ...proof, id: fullMatch } : proof;
-   });
-   ```
-3. Preloads the mint keys via `wallet.ensureOperableKeysets(targetKeysets)`.
-4. Executes a multi-tier proof swap (`wallet.receive(canonicalFlatToken)` ➔ `wallet.receive(canonicalTokenString)` ➔ `wallet.ops.receive(normalizedProofs).run()`).
-5. **Security Result:** The recipient receives brand-new, freshly blinded secret proofs from the mint. The sender's old proofs become permanently SPENT, finalizing the settlement.
-
-### 4. Fail-Closed Double-Spend Protection
-* Implements NUT-07 proof state verification (`checkProofsStates`).
-* **Enforces Fail-Closed Security:** If the mint is unresponsive or returns an error, the verification fails closed rather than displaying a false positive.
-* **Auto-Detection of Claimed Tokens:** When an evaluator or user claims a NutZap, the inbox UI immediately switches to `🔴 SPENT (Already claimed)` and disables the claim action.
-
----
-
-## ⚡ Custom Zero-Dependency RFC 8949 CBOR Decoder
-
-Next-gen Cashu V4 tokens (`cashuB`) use binary Concise Binary Object Representation (CBOR, RFC 8949) to reduce token payload sizes by 40%. 
-
-Rather than importing heavy npm dependencies that inflate bundle size and expose users to supply-chain attack vectors, NostrPulse includes a **hand-crafted, zero-dependency TypeScript CBOR decoder** in [`src/lib/cashu.ts`](file:///D:/UIT/NamBonUIT/NostrPulse/src/lib/cashu.ts):
-
-* **Pure Browser Primitives:** Built entirely with native `Uint8Array`, `DataView`, and bitwise arithmetic.
-* **64-Bit Integer Arithmetic:** Handles 64-bit unsigned integers without BigInt polyfills (`hi * 2**32 + lo`).
-* **RFC 8949 Major Types Supported:**
-  * Major 0: Unsigned Integers (1, 2, 4, 8 byte headers).
-  * Major 1: Negative Integers.
-  * Major 2: Byte Strings (`bstr` for keyset IDs, secrets, and blinding keys).
-  * Major 3: UTF-8 Text Strings (`tstr` for mint URLs and units).
-  * Major 4: Arrays (nested proof sets).
-  * Major 5: Key-Value Maps (NUT-00 token dictionaries).
-  * Major 7: Booleans, Null, and Special Floats.
-* **Zero Supply Chain Risk:** 0 third-party npm packages required for CBOR decoding. Works reliably across all modern browsers, serverless functions, and mobile web views.
-
----
-
-## 🛡️ Deterministic Multi-Signal Reputation & Anti-Sybil Engine
-
-Rather than executing heavy, memory-intensive graph traversal algorithms (e.g. EigenTrust, full Web-of-Trust matrix operations) that freeze browsers and crash mobile clients, NostrPulse employs an **Edge-Optimized Deterministic Multi-Signal Rule-Based Matrix**. 
-
-It evaluates identity signals in under 50ms per keypair, directly against open Nostr relay data:
-
-| Pillar | Max Points | Verification Signal & Heuristic Rationale | Sybil Defense Impact |
-| :--- | :---: | :--- | :--- |
-| **1. NIP-05 DNS Anchor** | **25 pts** | Cryptographic DNS binding verified via `/.well-known/nostr.json`.<br>• **Custom Domain:** 25 pts (Highest sovereign authority)<br>• **Established Provider (`primal.net`, `getalby.com`):** 20 pts<br>• **Free/Disposable Gateway (`iris.to`, `nostrcheck.me`):** 12 pts | **High:** Imposes domain ownership costs and DNS registry authority, preventing disposable bot generation. |
-| **2. Core Proximity & NIP-65 Mesh** | **25 pts** | Evaluates network graph topology and dynamic relay diversity.<br>• **Direct Core Seed Node (e.g. Jack, fiatjaf, jb55):** 25 pts<br>• **Relay Diversity:** +3 pts per connected relay (capped at 15 pts)<br>• **NIP-65 Relay List (Kind 10002) presence:** +10 pts | **High:** Prevents isolated cluster Sybils by measuring replication across the global public relay fabric. |
-| **3. Lightning V4V & LNURL Readiness** | **20 pts** | Verifies active Value-4-Value micro-transaction endpoints.<br>• **Active Lightning Address (`lud16`):** 15 pts<br>• **Valid LNURL-pay endpoint (`lud06`):** 5 pts | **Medium:** Filters out inactive bot accounts by validating economic settlement readiness. |
-| **4. Keypair Longevity & Broadcast Entropy** | **15 pts** | Evaluates cryptographic keypair age and broadcast consistency.<br>• **Account Age > 1 year:** 8 pts (6 months: 5 pts, 1 month: 2 pts)<br>• **Recent Note Activity (Kind 1):** 7 pts<br>• **Core Seed Keys:** Full 15 pts | **Medium:** Defeats freshly instantiated bot swarms by rewarding key durability over time. |
-| **5. Identity Completeness & Anti-Spam** | **15 pts** | Evaluates profile entropy and penalizes spam signatures.<br>• **Valid Avatar URL:** 5 pts<br>• **Bio length >= 10 characters:** 5 pts<br>• **Sovereign Website URL:** 5 pts<br>• **Anti-Spam Penalty:** −10 pts if handle matches raw hex/npub pattern | **Low / Defensive:** Differentiates authentic creators while penalizing mass-generated robotic identifiers. |
-
-### 🔒 The Anti-Sybil Damping Guard (42-Point Ceiling)
-Automated bot farms frequently fabricate complete profiles (avatar, bio, external links) to fool heuristic ranking engines. NostrPulse defeats this vector with an algorithmic **Anti-Sybil Damping Guard**:
-
-```typescript
-// Anti-Sybil Guard in src/lib/trust-score.ts
-if (!isNip05Verified && networkProximityPoints < 10) {
-  if (finalScore > 42) {
-    finalScore = 42;
-    isSybilDamped = true;
-  }
-}
-```
-
-> [!IMPORTANT]
-> Any account that lacks **cryptographic DNS verification (NIP-05)** AND exhibits an **isolated network topology (< 10 proximity points)** is strictly capped at **42 / 100 points**, locking it into the `Unverified / Potential Bot` tier regardless of its cosmetic profile richness.
-
----
-
-## 📡 Dual Network Engine (Pure P2P vs. Fast Edge Cache)
-
-NostrPulse guarantees censorship resistance through an instant, user-controllable network engine:
-
-```mermaid
-flowchart TD
-    Toggle["Dual Network Engine Switcher (Navbar Control)"]
-
-    subgraph FastMode["⚡ Fast Cache Mode (Primal Edge CDN)"]
-        FastDesc["Sub-second response times & high-throughput aggregation"]
-        FastEdge["Global edge caching layer for instant telemetry queries"]
-        FastDesc --- FastEdge
-    end
-
-    subgraph P2PMode["🛡️ Pure P2P Mode (Decentralized Direct)"]
-        P2PDesc["100% direct browser-to-relay WebSockets via SimplePool"]
-        P2PGuard["Zero third-party API dependencies & immune to indexer censorship"]
-        P2PDesc --- P2PGuard
-    end
-
-    Toggle -->|Selected| FastMode
-    Toggle -->|Selected| P2PMode
-```
-
-* **Pure P2P Mode:** Communicates exclusively via raw WebSockets directly to Nostr relay nodes (`wss://relay.damus.io`, `wss://nos.lol`, `wss://relay.primal.net`, etc.) using `nostr-tools/SimplePool`. No centralized API or proxy ever touches the request.
-* **Fast Cache Mode:** Utilizes the high-performance Primal edge caching layer for instant telemetry queries, profile metadata indexing, and global zap feed aggregation.
-* **Live UI Controller:** Located in the global navigation bar, providing instantaneous mode toggles with live status badges (`⚡ Fast Cache` vs `🛡️ Pure P2P`).
-
----
-
-## 📜 Protocol Specifications & NIP Compliance Table
-
-NostrPulse strictly adheres to open standards published by the Nostr and Cashu communities:
-
-| Standard | Category | Description | Implementation Status |
-| :--- | :--- | :--- | :---: |
-| **NIP-01** | Nostr Core | Event structure, Schnorr signatures, relay WebSocket protocol | ✅ Active |
-| **NIP-05** | Nostr Identity | DNS-based internet identifier verification (`/.well-known/nostr.json`) | ✅ Active |
-| **NIP-07** | Nostr Signer | Browser extension signing interface (`window.nostr`) | ✅ Active |
-| **NIP-19** | Nostr Entities | Bech32 entity encoding/decoding (`npub1`, `nsec1`, `note1`, `nprofile1`) | ✅ Active |
-| **NIP-44** | Nostr Privacy | Version 2 payload encryption using ChaCha20-Poly1305 & Diffie-Hellman | ✅ Active |
-| **NIP-57** | Nostr Value | Lightning Zaps (`Kind 9734` Zap Request & `Kind 9735` Zap Receipt) | ✅ Active |
-| **NIP-61** | Nostr eCash | Encrypted Cashu NutZaps (`Kind 9321` Chaumian token delivery) | ✅ Active |
-| **NIP-65** | Nostr Routing | Relay List Metadata (`Kind 10002`) for dynamic outbox gossiping | ✅ Active |
-| **NUT-00** | Cashu Protocol | Token specifications: V3 JSON (`cashuA`) and V4 binary CBOR (`cashuB`) | ✅ Active |
-| **NUT-01** | Cashu Mint | Mint public keys and keyset retrieval | ✅ Active |
-| **NUT-02** | Cashu Mint | Keyset ID discovery and keyset status endpoints (`/v1/keysets`) | ✅ Active |
-| **NUT-03** | Cashu Swap | Token swapping and proof exchange for recipient ownership | ✅ Active |
-| **NUT-04** | Cashu Minting | In-app minting via Lightning BOLT-11 quotes | ✅ Active |
-| **NUT-07** | Cashu State | Token proof spend-state verification (`checkProofsStates`) | ✅ Active |
-
----
-
-## 🛠️ Codebase Architecture & Key Files
-
-```text
-nostr-pulse/
-├── src/
-│   ├── app/
-│   │   ├── p/[npub]/page.tsx        # Profile dashboard, Trust Score breakdown, NutZap Inbox
-│   │   ├── compare/page.tsx         # Side-by-side Creator Versus engine
-│   │   ├── relays/page.tsx          # Real-time WebSocket relay latency telemetry monitor
-│   │   └── api/badge/[npub]/        # Dynamic SVG reputation badge generator
-│   ├── components/
-│   │   ├── detail/
-│   │   │   ├── NutZapInbox.tsx      # NIP-61 Kind 9321 inbox, NIP-44 decrypt & 1-click claim
-│   │   │   ├── LightningZapCard.tsx # Dual-rail settlement card: Lightning (NIP-57) + Cashu (NIP-61)
-│   │   │   ├── LiveZapFeed.tsx      # Real-time WebSocket client streaming Kind 9735 receipts
-│   │   │   └── TrustScoreCard.tsx   # Interactive 5-Pillar reputation matrix breakdown UI
-│   │   └── layout/
-│   │       ├── Header.tsx           # Global navigation with NIP-07 connect & network switch
-│   │       └── NetworkModeToggle.tsx# Real-time Fast Cache vs Pure P2P selector
-│   └── lib/
-│       ├── cashu.ts                 # Zero-dep CBOR decoder, NutZap pipeline, Keyset expansion
-│       ├── trust-score.ts           # 5-Pillar scoring matrix & Anti-Sybil damping guard
-│       ├── nip05.ts                 # Cryptographic DNS record verification (.well-known/nostr.json)
-│       ├── network-mode.ts          # Dual-network state manager (Fast Edge vs. Pure P2P)
-│       └── nostr.ts                 # SimplePool relay manager, NIP-19 decoders, timeout wrappers
-```
-
----
-
-## ⚡ Local Development & Testing Guide
+NostrPulse is engineered with **zero required external environment variables, zero API keys, and zero database setup** out of the box.
 
 ### Prerequisites
-* Node.js `>= 18.18.0`
-* `npm`, `pnpm`, or `yarn`
-* A Nostr browser extension (e.g., [Alby](https://getalby.com/) or [nos2x](https://github.com/nostr-protocol/nos2x))
+* **Node.js:** `>= 18.18.0` (LTS recommended)
+* **Package Manager:** `npm`, `pnpm`, or `yarn`
+* **Browser:** Any modern Chromium, Firefox, or Safari browser
 
-### 1. Clone & Install
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/PHONGUIT22/nostr-pulse.git
 cd nostr-pulse
-npm install
 ```
 
-### 2. Verify Open Relay Discovery (Reproducibility Script)
-Run the automated relay discovery script to confirm that creator profiles, NIP-05 DNS records, and Lightning addresses are live-crawled directly from open Nostr relays:
+### 2. Install Dependencies
 ```bash
-node src/scripts/enrich-creators.mjs
+npm install
 ```
 
 ### 3. Run Development Server
 ```bash
 npm run dev
 ```
-Navigate to [http://localhost:3000](http://localhost:3000).
 
-### 4. End-to-End NutZap Testing with Cashu Testnut
-1. Ensure your browser extension is active with a test Nostr keypair.
-2. Visit `http://localhost:3000/p/<your_npub>`.
-3. In another tab or browser profile, send a NutZap using **Cashu Testnut** (`https://testnut.cashu.space`) to your test profile.
-4. Watch the `nutzap_received` event trigger real-time inbox auto-refresh.
-5. Click **🔓 Decrypt & View Token**, then **⚡ Claim to Mint (Swap Proofs)**.
-6. Verify your updated proof tokens are held locally and marked `🟢 Claimed & Swapped`.
+Open your browser and navigate to:
+```text
+http://localhost:3000
+```
 
----
-
-## 🗺️ Roadmap & Future Horizons
-
-* [x] **Phase 1:** Deterministic 5-Pillar Reputation Engine & Anti-Sybil Damping Guard.
-* [x] **Phase 2:** NIP-57 Lightning Zap integration with WebLN & live receipt streaming.
-* [x] **Phase 3:** Custom zero-dependency RFC 8949 CBOR decoder (`cashuB`).
-* [x] **Phase 4:** Full-Cycle NIP-61 NutZap engine: Sending + Receiving Inbox + 1-Click Keyset Expansion & Claim.
-* [x] **Phase 5:** Dual Network Engine (Instant switch between Fast Edge Cache & Pure P2P).
-* [ ] **Phase 6:** NUT-11 (P2PK) locks for deterministic, recipient-locked eCash NutZaps.
-* [ ] **Phase 7:** NIP-90 (Data Vending Machines) for automated AI Agent reputation scoring and micro-payments.
-* [ ] **Phase 8:** Standalone `@nostrpulse/sdk` npm package for third-party Nostr and WebLN integrations.
+### 4. Build for Production
+To verify production bundle compilation and type integrity:
+```bash
+npm run build
+npm run start
+```
 
 ---
 
-## 🛡️ Privacy & Cypherpunk Audit
+## 🛡️ Protocol Specifications & NIP Compliance
 
-NostrPulse is engineered in strict accordance with Cypherpunk principles:
-* **Zero Tracking & Surveillance:** No Google Analytics, no session trackers, no telemetry pixels.
-* **100% Client-Side Cryptographic Execution:** Trust calculations, CBOR decoding, NIP-44 decryption, and token proofs are processed locally in your browser.
-* **Non-Custodial Bearer Privacy:** NostrPulse **never** asks for, holds, or transmits private keys (`nsec`). All signing is mediated via NIP-07 extension standards.
+NostrPulse strictly adheres to open specifications across both the Nostr and Cashu ecosystems:
+
+| Standard | Layer | Description | Implementation Status |
+| :--- | :--- | :--- | :---: |
+| **NIP-01** | Nostr Core | Event schemas, Schnorr signatures, relay WebSocket subscriptions | ✅ Fully Supported |
+| **NIP-05** | Identity | Cryptographic DNS verification mapping handle to Nostr pubkey | ✅ Fully Supported |
+| **NIP-07** | Client Signer | Browser extension signing interface (`window.nostr`) | ✅ Fully Supported |
+| **NIP-19** | Entities | Bech32 entity encoding/decoding (`npub`, `note`, `nprofile`) | ✅ Fully Supported |
+| **NIP-44 v2** | Privacy | ChaCha20-Poly1305 authenticated end-to-end encryption | ✅ Fully Supported |
+| **NIP-57** | Lightning | Synchronous Lightning Zaps (Kind 9734 request & Kind 9735 receipt) | ✅ Fully Supported |
+| **NIP-61** | Chaumian eCash | Asynchronous NutZaps via Kind 9321 events | ✅ Fully Supported |
+| **NIP-65** | Routing | Relay List Metadata (Kind 10002) for dynamic outbox routing | ✅ Fully Supported |
+| **NUT-00** | Cashu Tokens | V3 JSON (`cashuA`) and V4 binary CBOR (`cashuB`) specifications | ✅ Fully Supported |
+| **NUT-02** | Cashu Mint | Keyset ID discovery and status endpoints (`/v1/keysets`) | ✅ Fully Supported |
+| **NUT-03** | Cashu Swap | Token swapping and proof exchange for recipient ownership | ✅ Fully Supported |
+| **NUT-04** | Cashu Minting | In-app minting via Lightning BOLT-11 quotes | ✅ Fully Supported |
+| **NUT-07** | Cashu State | Token spend-state verification (`checkProofsStates`) | ✅ Fully Supported |
 
 ---
 
-## ⚖️ License & Disclaimer
+## 🔍 Codebase Architecture
 
-Distributed under the **MIT License**. NostrPulse is an independent, non-custodial open-source software project. It does not custody funds, provide banking services, or manage private keys. All Lightning and Cashu operations execute peer-to-peer over decentralized protocol layers.
+```text
+nostr-pulse/
+├── src/
+│   ├── app/
+│   │   ├── page.tsx                 # Homepage with Live Interactive Demo
+│   │   ├── p/[npub]/page.tsx        # Profile dashboard, Trust Score breakdown, NutZap Inbox
+│   │   ├── compare/page.tsx         # Head-to-Head Creator Versus arena
+│   │   ├── relays/page.tsx          # Real-time WebSocket relay latency monitor
+│   │   └── api/badge/[npub]/        # Dynamic SVG reputation badge generator
+│   ├── components/
+│   │   ├── home/
+│   │   │   └── HeroSearchSection.tsx# 1-Click Interactive Demo buttons (fiatjaf vs anon_bot)
+│   │   ├── detail/
+│   │   │   ├── NutZapInbox.tsx      # Kind 9321 inbox, NIP-44 decryption, proof swap
+│   │   │   ├── LightningZapCard.tsx # Dual-rail payment card (Lightning + Cashu)
+│   │   │   ├── LiveZapFeed.tsx      # Real-time WebSocket streaming Kind 9735 receipts
+│   │   │   └── TrustScoreCard.tsx   # 5-Pillar matrix & Anti-Sybil damping indicator
+│   │   └── layout/
+│   │       └── Navbar.tsx           # Global navigation with network mode toggle
+│   └── lib/
+│       ├── cashu.ts                 # Zero-dep CBOR decoder, NutZap engine, Keyset resolution
+│       ├── trust-score.ts           # 5-Pillar scoring matrix & Anti-Sybil damping guard
+│       ├── nip05.ts                 # Cryptographic DNS record verification
+│       ├── network-mode.ts          # State manager: Fast Cache vs. Pure P2P
+│       └── nostr.ts                 # SimplePool relay manager, NIP-19 decoders
+├── docs/
+│   └── DEVFOLIO_SUBMISSION.md       # Hackathon narrative copy
+└── PRODUCT.md                       # Impeccable durable product register
+```
+
+---
+
+## ⚠️ Honest Technical Limitations & What's Next
+
+1. **Decentralized Relay Propagation Jitter:** Public Nostr relays operate asynchronously. When publishing Kind 9321 events, occasional WebSocket connection timeouts can occur if a specific relay is rate-limited. We mitigate this by publishing concurrently across a resilient mesh of 5+ indexing relays with local browser cache reconciliation.
+2. **Dependence on Testnet Mint Availability:** The live demo defaults to `https://testnut.cashu.space`. If this public testnet mint experiences temporary node maintenance, proof verification and swaps will fail closed to protect user funds.
+3. **Absence of NUT-11 P2PK Locks in Current Mints:** Until public mints widely deploy NUT-11 (Pay-to-Public-Key) locks, eCash proofs remain bearer secrets before redemption. We enforce mandatory NIP-44 v2 encryption during transmission to prevent mempool front-running, but recipient-locked proofs remain our top roadmap priority for post-hackathon mainnet release.
+
+---
+
+## ⚖️ License & Cypherpunk Statement
+
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+* **No Surveillance:** Zero tracking scripts, zero Google Analytics, zero session cookies.
+* **100% Client-Side Execution:** Cryptographic hashing, CBOR decoding, NIP-44 encryption, and proof swaps occur locally in your browser.
+* **Non-Custodial Architecture:** NostrPulse never holds or requests your private key (`nsec`). All signing is mediated via NIP-07 extension standards.
