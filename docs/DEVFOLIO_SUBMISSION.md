@@ -8,55 +8,53 @@
 
 ### The problem NostrPulse solves
 
-Twitter charges $8 a month to slap a blue checkmark on an account, backed by a corporate database that can ban you tomorrow. Nostr fixes the deplatforming problem by turning identity into cryptographic keypairs. 
+Twitter charges $8 a month for a blue checkmark, backed by a corporate database that can suspend any account at will. Nostr fixes the deplatforming vulnerability by making identity a cryptographic keypair (`npub` / `nsec`).
 
-That fix created two massive bottlenecks:
+However, that design introduced two protocol bottlenecks:
 
-1. **Identity is computationally free.** Anyone can spin up 10,000 keys (`npub`) in two seconds for zero satoshis. Scammers clone creator bios, scrape avatars, and spam public relays with fake profiles. On-chain KYC destroys privacy; traditional Web-of-Trust graph algorithms require computing multi-hop connections client-side, which locks up mobile browser tabs.
-2. **Lightning tipping is fragile.** Standard Zaps (NIP-57) require synchronous coordination. If a creator’s phone goes to sleep, their node loses power, or their routing channels run out of inbound liquidity, the tip fails immediately. Fans want to send 100 sats; instead, they get a routing timeout.
+1. **Identity is computationally free:** Anyone can generate 10,000 Nostr keypairs in seconds for zero satoshis. Scammers clone creator bios, scrape avatars, and spam relays with impersonation profiles. Traditional KYC ruins anonymity and privacy; on the other hand, naive client-side Web-of-Trust graph crawlers freeze the browser thread when traversing multi-hop follow lists.
+2. **Lightning tipping is fragile:** Standard Lightning Zaps (NIP-57) require synchronous coordination. If a creator's phone goes to sleep, their node goes offline, or their routing channels lack inbound liquidity, the payment fails immediately. Fans attempting to send 100 sats hit routing timeouts and dropped invoices.
 
-NostrPulse tackles both problems through local cryptographic validation and asynchronous eCash:
+NostrPulse resolves both failures through local graph verification, Sats-weighted economic stake analysis, and asynchronous Chaumian eCash:
 
-- **Local Anti-Sybil Scoring (< 50ms):** No remote servers, no KYC, and no heavy graph traversals. The browser scores any key (0–100) using NIP-05 DNS signatures, relay gossip diversity (NIP-65), LNURL endpoints, and key age.
-- **The 42-Point Anti-Sybil Damping Guard:** Botnets bypass naive reputation engines by filling out extensive bios, avatars, and links. NostrPulse enforces a strict rule: if an identity lacks verified DNS ownership and core network proximity, its score is mathematically clamped at 42 points. Sybil accounts cannot game their way into the "Verified Builder" tier.
-- **Two-Way Cashu NutZaps (NIP-61):** Creators do not need to keep a node online 24/7. NostrPulse implements asynchronous Chaumian eCash tips. Sats are wrapped into encrypted Kind 9321 events. The creator can stay offline for weeks; when they log in, they decrypt their inbox with their browser extension and swap the proofs with the mint in one click.
-- **Zero-Dependency Core:** Everything runs client-side. Users can toggle between accelerated edge caching and pure P2P WebSocket mode directly to open relays via `SimplePool`.
+- **4-Tier Web-of-Trust Graph Engine:** Instead of trusting superficial profile metadata, NostrPulse scores identity depth using network proximity to 12 curated ecosystem root anchors (Fiatjaf, Jack Dorsey, NVK, Calle, ODELL, Pablof7z, Gigi, Derek Ross, Rockstar, Lyn Alden, etc.):
+  - **Hop 0 (Root Anchors):** Hardcoded foundational builders and protocol authors.
+  - **Hop 1 (Ring-1 Anchors):** 5,544 unique pubkeys directly followed by Root Anchors, loaded instantly into an in-memory hash set (`< 3ms` cold lookup) from a pre-computed graph snapshot. Points scale directly with anchor diversity: `Math.round((Math.min(8.0, rawScore) / 8.0) * 45)`.
+  - **Hop 2 (Transitive Trust):** Validated across high-speed relay gossip (Damus, Primus, Eden, Nos).
+  - **Hop 3+ (Isolated Graph):** Zero anchor reachability.
+- **Sats-Weighted In-Degree Economic Stake:** Bot armies can inflate follow counts for free, but burning real Bitcoin satoshis carries real financial cost. NostrPulse queries Kind 9735 zap receipts, validates cryptographic bolt11 preimages, and applies strict filters:
+  - **Wash Trading Rejection:** Discards self-zapping loops where `senderHex === targetHex`.
+  - **Sybil Sender Filter:** Ignores zaps originating from isolated bots whose WoT score is 0 (`wotDistance > 2`).
+  - **Logarithmic Saturation:** Calculates points via `Math.round(Math.min(30, Math.log10(validSats + 1) * 2.5))` with a 20-point baseline for verified Lightning addresses (`lud16`).
+- **Strict Anti-Sybil Gatekeeper (0–25 pt Hard Ceiling):** Accounts with zero graph connection (`distance >= 3`) AND zero verified economic stake (`validSats === 0`) are hard-clamped to a maximum score of 25/100 (`Unverified / Potential Bot`). Sybil accounts cannot game their way into verified tiers simply by filling out bios, banner images, or arbitrary NIP-05 DNS handles.
+- **Two-Way Chaumian eCash NutZaps (NIP-61):** Creators do not need to maintain an active node or monitor Lightning channels. Sats are minted into Cashu bearer proofs, encrypted with NIP-44 v2, and published as Kind 9321 events. The recipient can stay offline for weeks, decrypt their inbox on demand, and swap proofs with the mint in a single click.
+- **Interoperability & Open Ecosystem Adoption:**
+  - **Embeddable Widget (`public/widget.js`):** A zero-dependency web component (`<nutzap-me>`) that developers can drop into any static blog or website with a single `<script>` tag.
+  - **Public REST API (`GET /api/v1/trust-score/[pubkey]`):** A CORS-enabled endpoint delivering real-time WoT distance, anchor endorsement counts, and Sybil-filtered satoshi volumes to third-party clients like Coracle, Amethyst, and Snort.
 
 ---
 
 ### Challenges I ran into
 
-The hardest bugs did not come from the UI—they came from broken assumptions at the protocol boundary between Nostr, Cashu, and the browser runtime.
+The hardest bugs did not come from building UI layouts—they came from broken assumptions at the protocol boundary where Nostr relays, Chaumian mints, and browser runtimes collide:
 
-#### 1. The 16-Hex vs 66-Hex Keyset ID Mismatch (`Inputs: 0` bug)
-This was the most brutal bug in the Cashu redemption flow. 
+#### 1. The 16-Hex vs 66-Hex Keyset ID Mismatch (`Inputs: 0` Bug)
+When redeeming incoming Cashu V4 tokens, mint nodes repeatedly returned `MintOperationError: Inputs: 0, Outputs: 0`. The proofs were mathematically valid, yet the swap aborted silently before touching the mint network.
+- **Root Cause:** Cashu V4 CBOR tokens (`cashuB`) truncate keyset IDs to 16 hex characters to minimize QR payload size. However, Mint backends and `@cashu/cashu-ts` v4 strictly validate proofs against full 66-hex IDs. When passing truncated proofs into `wallet.receive()`, the SDK dropped all unrecognized proofs, submitting an empty input array to the mint.
+- **Resolution:** Implemented an auto-expansion step inside `claimNutZapToken()` in `src/lib/cashu.ts`. Before submitting the swap, the client queries `/v1/keysets` directly from the mint, matches the truncated 16-hex prefix against active 66-hex keyset entries, normalizes the proofs with the full ID, and feeds a canonical token object into the wallet. Proof redemptions settled consistently in under 800ms.
 
-When claiming an incoming NutZap token, the mint kept throwing `MintOperationError: Inputs: 0, Outputs: 0`. The proofs were valid and unspent, but the swap kept failing silently inside the Cashu SDK.
+#### 2. Zero-Dependency RFC 8949 CBOR Decoder for the Browser
+Next-generation Cashu tokens (`cashuB...`) use binary CBOR encoding (NUT-00). Standard npm CBOR parsers pulled in heavy Node.js `Buffer` shims, inflating the production bundle by hundreds of kilobytes and throwing `ReferenceError: Buffer is not defined` inside browser Web Worker execution contexts.
+- **Resolution:** Avoided bloated polyfills by implementing an RFC 8949 binary CBOR decoder from scratch in pure TypeScript (`decodeCbor()` in `src/lib/cashu.ts`). It operates directly on native `Uint8Array` primitives, parsing major types (unsigned ints, byte strings, UTF-8 text, arrays, maps) using raw bitwise shifts (`initialByte >> 5`). The implementation weighs ~80 lines of code, introduces zero npm dependencies, and parses V4 token payloads in sub-milliseconds.
 
-The bug was an encoding mismatch between specifications:
-- Cashu V4 binary tokens (`cashuB`) truncate keyset IDs to 16 hex characters to save space in QR codes and message payloads.
-- Mint nodes and `@cashu/cashu-ts` v4 evaluate keysets using full 66-hex character IDs.
+#### 3. Eliminating Relay Front-Running via NIP-44 v2 Authenticated Encryption
+Cashu proofs are bearer assets: possession of the secret string grants instant spend authority. Broadcasting raw Cashu tokens in plaintext over public Nostr relays allowed malicious relay operators and scrapers to extract proofs and redeem them at the mint before the intended recipient processed the event.
+- **Resolution:** Enforced mandatory NIP-44 v2 payload encryption for all Kind 9321 NutZaps. The sender generates an ephemeral keypair and derives a ChaCha20-Poly1305 shared secret using the recipient's public key (via secp256k1 ECDH). Proofs never hit relay memory in plaintext. Only the recipient holding the corresponding private key can decrypt the content and execute the proof swap.
 
-Because the IDs did not match, `wallet.receive()` dropped all decoded proofs as invalid before sending the payload to the mint, resulting in an empty proof array. 
+#### 4. Solving Client-Side Graph Freezes via Pre-Computed Ring-1 Caching
+Crawling Kind 3 contact lists for 12 Root Anchors across multiple relays dynamically at runtime spawned 50+ concurrent WebSocket subscriptions. This saturated network bandwidth and locked the browser's main thread for 4 to 8 seconds on mobile devices.
+- **Resolution:** Built an offline graph compilation pipeline (`scripts/build-ring1-cache.ts`) that crawls Kind 3 contact lists across 5 high-speed relays, aggregating 5,544 unique Ring-1 pubkeys along with their endorsing anchor sets. Baked this into `src/data/ring1-cache.json` (~290 KB). In production, this snapshot loads into an in-memory `Set` and `Map`, cutting Hop-1 graph lookups from ~5,000ms down to `< 3ms` without issuing a single network request.
 
-Instead of waiting for an upstream SDK patch, I wrote an auto-expansion step inside `claimNutZapToken()`:
-Before submitting the swap, the client queries `/v1/keysets` directly from the mint, matches the truncated 16-hex prefix against active 66-hex keysets, normalizes the proofs with the full ID, and feeds a canonical token object into the wallet. Swaps went from 100% failure to settling in under 800ms.
-
-#### 2. Binary CBOR in the Browser Without Supply-Chain Baggage
-Next-gen Cashu tokens (`cashuB...`) use binary CBOR encoding (NUT-00). 
-
-Every standard CBOR decoder on npm pulled in Node.js `Buffer` shims, inflating the client bundle by hundreds of kilobytes and throwing `ReferenceError: Buffer is not defined` inside browser web workers. Bringing in heavy polyfills on a page handling cryptographic bearer cash introduced unnecessary supply-chain attack vectors.
-
-I deleted the third-party parsers and built an RFC 8949 binary CBOR decoder from scratch in pure TypeScript (`decodeCbor()`). It runs directly on native `Uint8Array` primitives, decoding unsigned integers, byte arrays, text strings, arrays, and maps using raw bitwise shifts (`initialByte >> 5`). It weighs 80 lines of code, has zero npm dependencies, and parses V4 tokens in sub-milliseconds.
-
-#### 3. Relay Front-Running on Bearer Assets
-Cashu proofs are bearer assets. Whoever knows the secret string owns the sats.
-
-Broadcasting raw Cashu tokens over Nostr relays meant malicious relay operators or mempool scrapers could steal the proofs and redeem them at the mint before the recipient even received the WebSocket event.
-
-I enforced mandatory NIP-44 v2 payload encryption for all Kind 9321 NutZaps. The sender generates an ephemeral keypair and computes a Diffie-Hellman shared secret with the recipient's public key. The raw Cashu token never touches relay memory in plaintext. Only the recipient holding the corresponding private key can decrypt the payload and trigger the proof swap.
-
-#### 4. Handling Stale Proofs and Double-Spend Protection
-If a user tries to claim an eCash token that was already redeemed, mints return an error. Early implementations showed a generic red error message, which made the app look broken.
-
-I reworked `verifyTokenWithMint()` and `NutZapInbox` to follow a fail-closed model. If proof verification returns `SPENT`, the UI doesn't crash or show a cryptic trace. It converts the state into an educational security indicator: `Double-Spend Protection Active (NUT-07 SPENT)`. It proves to the judge that the Chaumian mint successfully prevented duplicate redemption without compromising the creator's session.
+#### 5. Fail-Closed Verification over Optimistic UI (NUT-07 Double-Spend Defense)
+If a sender replayed an already-claimed eCash token or a creator attempted to redeem proofs twice, mint nodes rejected the swap. Early optimistic UI updates showed transient balance bumps that reverted after mint rejection, confusing users.
+- **Resolution:** Re-architected `verifyTokenWithMint()` and `NutZapInbox` into a fail-closed verification pipeline. The client queries the mint's NUT-07 spend state endpoint prior to presenting claim actions. If a proof returns `SPENT`, the UI intercepts the state and renders an educational security badge: `Double-Spend Protection Active (NUT-07 SPENT)`. This demonstrates that the Chaumian mint prevented duplicate redemption without corrupting wallet state or interrupting the user session.
