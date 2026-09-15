@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ NostrPulse
+# ⚡ nostr-pulse
 ### Sovereign Web-of-Trust Graph Engine, Sats-Weighted Anti-Sybil Defense & Full-Cycle Chaumian eCash Protocol Client
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-9333EA?style=for-the-badge)](https://opensource.org/licenses/MIT)
@@ -14,15 +14,15 @@
 <br />
 
 <p align="center">
-  <b>NostrPulse</b> is an enterprise-grade analytics explorer, sovereign trust matrix, and full-cycle <b>NIP-61 Chaumian eCash (Cashu)</b> client built on the <b>Freedom Tech Stack</b> (Nostr + Bitcoin Lightning + Cashu eCash). It transforms raw cryptographic keypairs into verifiable, Sybil-resistant reputation metrics while enabling friction-free, offline Value-4-Value micro-settlements.
+  <b>nostr-pulse</b> is an enterprise-grade analytics explorer, sovereign trust matrix, and full-cycle <b>NIP-61 Chaumian eCash (Cashu)</b> client built on the <b>Freedom Tech Stack</b> (Nostr + Bitcoin Lightning + Cashu eCash). It transforms raw cryptographic keypairs into verifiable, Sybil-resistant reputation metrics while enabling friction-free, offline Value-4-Value micro-settlements.
 </p>
 
 <p align="center">
-  <a href="https://nostrpulse.vercel.app/"><b>🚀 Launch Live Explorer »</b></a> •
+  <a href="https://nostr-pulse.vercel.app/"><b>🚀 Launch Live Explorer »</b></a> •
   <a href="#-happy-path-evaluation-guide-for-judges"><b>Evaluation Guide</b></a> •
   <a href="#-finished-vs-unfinished-matrix"><b>Finished vs. Unfinished</b></a> •
   <a href="#-clean-machine-setup--reproduction"><b>Local Setup</b></a> •
-  <a href="https://nostrpulse.vercel.app/compare"><b>Versus Engine</b></a>
+  <a href="https://nostr-pulse.vercel.app/compare"><b>Versus Engine</b></a>
 </p>
 
 </div>
@@ -33,11 +33,11 @@
 
 | Field | Detail |
 | :--- | :--- |
-| **Project Name** | **NostrPulse** |
+| **Project Name** | **nostr-pulse** |
 | **Hackathon** | **BOSS Battle Hackathon** (Bitshala) |
 | **Submission Track** | **Track 2: Freedom Stack** |
 | **Team / Author** | **Nguyen Hac Phong** ([@PHONGUIT22](https://github.com/PHONGUIT22)) — *Solo Entry* |
-| **Live Web App** | [https://nostrpulse.vercel.app](https://nostrpulse.vercel.app) |
+| **Live Web App** | [https://nostr-pulse.vercel.app](https://nostr-pulse.vercel.app) |
 | **Source Repository** | [https://github.com/PHONGUIT22/nostr-pulse](https://github.com/PHONGUIT22/nostr-pulse) |
 | **License** | Open-source under the [MIT License](LICENSE) |
 
@@ -46,7 +46,7 @@
 ## 📹 Walkthrough Demo Video
 
 > 📺 **Demo Walkthrough Video (3–5 Minutes):**  
-> **[Watch the NostrPulse Walkthrough on YouTube](https://youtu.be/pWb9w-7-gQ8)** *(or download the direct MP4 from project releases)*  
+> **[Watch the nostr-pulse Walkthrough on YouTube](https://youtu.be/pWb9w-7-gQ8)** *(or download the direct MP4 from project releases)*  
 > *A concise walkthrough demonstrating: 1-click Anti-Sybil inspection, NIP-05 DNS cryptographic verification, in-app testnet eCash minting, and the complete 2-way NIP-61 NutZap receiver inbox proof-swap.*
 
 ---
@@ -65,11 +65,11 @@ Standard Lightning Zaps (NIP-57) require real-time coordination. If a creator's 
 
 ---
 
-### How NostrPulse Solves Both
+### How nostr-pulse Solves Both
 
 ```text
 +-----------------------------------------------------------------------------------+
-|                           NOSTRPULSE FREEDOM STACK                                |
+|                           nostr-pulse FREEDOM STACK                                |
 +-----------------------------------------------------------------------------------+
 |  1. GRAPH-THEORETIC SOVEREIGN REPUTATION LAYER                                    |
 |     - 4-Tier Web-of-Trust Graph: Hop 0 (Core Root Anchors), Hop 1 (Ring-1),       |
@@ -104,19 +104,19 @@ Standard Lightning Zaps (NIP-57) require real-time coordination. If a creator's 
 You can evaluate the complete system without installing browser extensions or spending real money:
 
 ### Step 1: 1-Click Anti-Sybil Matrix Inspection
-1. Navigate to the **[NostrPulse Homepage](https://nostrpulse.vercel.app/)**.
+1. Navigate to the **[nostr-pulse Homepage](https://nostr-pulse.vercel.app/)**.
 2. Immediately below the search bar, locate the **Live Interactive Demo** section.
-3. Click **🔥 Inspect Verified Builder** ([fiatjaf](https://nostrpulse.vercel.app/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6)):
+3. Click **🔥 Inspect Verified Builder** ([fiatjaf](https://nostr-pulse.vercel.app/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6)):
    - Observe the **95 pts** score with the emerald `Verified Builder` tier.
    - Inspect the **Hop 0: Core Root Anchor** cryptographic status (45/45 graph pts), verified NIP-05 DNS signature (`_@fiatjaf.com`), active Lightning endpoint, and network longevity.
-4. Click **⚠️ Inspect Sybil Bot Clone** ([anon_bot](https://nostrpulse.vercel.app/p/anon_bot)):
+4. Click **⚠️ Inspect Sybil Bot Clone** ([anon_bot](https://nostr-pulse.vercel.app/p/anon_bot)):
    - Observe how synthetic profile metadata (avatar, bio, external link) accumulated raw points.
    - Notice the **Anti-Sybil Gatekeeper Enforced**: because it has zero graph connectivity (`distance = 3`) and zero incoming WoT sats, its score is **strictly hard-capped at $\le$ 25 pts** (`Unverified / Potential Bot`, `Vulnerable` Sybil resistance), mathematically preventing metadata gaming.
 
 ---
 
 ### Step 2: Send a NIP-61 NutZap (Sender Pipeline)
-1. On any creator profile (e.g., [Jack](https://nostrpulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)), scroll to the **Support Creator** card.
+1. On any creator profile (e.g., [Jack](https://nostr-pulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)), scroll to the **Support Creator** card.
 2. Switch payment tab to **Cashu eCash (NIP-61)**.
 3. Obtain a testnet Cashu token via either method:
    - **Method A (In-App 1-Click Mint):** Switch to **1-Click Mint**, select a satoshi amount (e.g. 21 Sats), and settle the testnet invoice.
@@ -145,10 +145,10 @@ You can evaluate the complete system without installing browser extensions or sp
 ### Step 4: Standalone NutZap Widget & Public REST API
 
 1. **Test Standalone NutZap Widget (`widget.js`):**
-   - NostrPulse ships with a zero-dependency Vanilla JS embed script at `/widget.js`.
+   - nostr-pulse ships with a zero-dependency Vanilla JS embed script at `/widget.js`.
    - Any website, blog, or static creator page can embed eCash tipping with a single line:
      ```html
-     <script src="https://nostrpulse.vercel.app/widget.js" data-npub="npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" data-name="fiatjaf" async></script>
+     <script src="https://nostr-pulse.vercel.app/widget.js" data-npub="npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" data-name="fiatjaf" async></script>
      ```
    - Alternatively, use the custom Web Component:
      ```html
@@ -159,7 +159,7 @@ You can evaluate the complete system without installing browser extensions or sp
 2. **Test Public Open Reputation REST API:**
    - External Nostr clients (Amethyst, Coracle, Snort) can query the CORS-enabled trust endpoint directly for anti-spam filtering:
      ```bash
-     curl -s https://nostrpulse.vercel.app/api/v1/trust-score/3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d
+     curl -s https://nostr-pulse.vercel.app/api/v1/trust-score/3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d
      ```
    - Returns structured JSON containing `score`, `tier`, `wot.distance`, `wot.endorsers_count`, `economic_stake.total_valid_sats`, and `sybil_resistance_level`.
 
@@ -193,7 +193,7 @@ We believe in radical transparency regarding what was built and tested during th
 
 ## ⚡ Clean-Machine Setup & Reproduction
 
-NostrPulse is engineered with **zero required external environment variables, zero API keys, and zero database setup** out of the box.
+nostr-pulse is engineered with **zero required external environment variables, zero API keys, and zero database setup** out of the box.
 
 ### Prerequisites
 * **Node.js:** `>= 18.18.0` (LTS recommended)
@@ -232,7 +232,7 @@ npm run start
 
 ## 🛡️ Protocol Specifications & NIP Compliance
 
-NostrPulse strictly adheres to open specifications across both the Nostr and Cashu ecosystems:
+nostr-pulse strictly adheres to open specifications across both the Nostr and Cashu ecosystems:
 
 | Standard | Layer | Description | Implementation Status |
 | :--- | :--- | :--- | :---: |
@@ -311,4 +311,4 @@ Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 * **No Surveillance:** Zero tracking scripts, zero Google Analytics, zero session cookies.
 * **100% Client-Side Execution:** Cryptographic hashing, CBOR decoding, NIP-44 encryption, and proof swaps occur locally in your browser.
-* **Non-Custodial Architecture:** NostrPulse never holds or requests your private key (`nsec`). All signing is mediated via NIP-07 extension standards.
+* **Non-Custodial Architecture:** nostr-pulse never holds or requests your private key (`nsec`). All signing is mediated via NIP-07 extension standards.
