@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, XCircle, Activity, Code, ShieldAlert } from "lucide-react";
+import { CheckCircle2, XCircle, Activity, Code, Users, ShieldAlert } from "lucide-react";
 import { TrustScoreResult } from "@/lib/trust-score";
 import TrustScoreBadge from "@/components/detail/TrustScoreBadge";
 import EmbedBadgeModal from "@/components/detail/EmbedBadgeModal";
@@ -54,31 +54,139 @@ export default function TrustScoreCard({ trustData, name, npub = "" }: Props) {
           {/* Column 2: Risk overview */}
           <div className="md:col-span-2 space-y-4">
             <div className="p-4 bg-slate-950/70 rounded-2xl border border-slate-800">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Reputation Assessment:
-              </span>
+              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Reputation Assessment:
+                </span>
+                {trustData.wotDistance !== undefined && (
+                  <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                    trustData.wotDistance === 0
+                      ? "bg-purple-500/10 text-purple-300 border-purple-500/30"
+                      : trustData.wotDistance === 1
+                      ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                      : trustData.wotDistance === 2
+                      ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                      : "bg-slate-800/80 text-slate-400 border-slate-700"
+                  }`}>
+                    {trustData.wotDistance === 0 && "Hop 0 • Core Anchor"}
+                    {trustData.wotDistance === 1 && "Hop 1 • Ring-1 Verified"}
+                    {trustData.wotDistance === 2 && "Hop 2 • Transitive Trust"}
+                    {trustData.wotDistance === 3 && "Hop > 2 • Isolated Key"}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-slate-300 leading-relaxed">
                 {summary}
               </p>
             </div>
 
-            {summary.includes("Capped at 42") && (
-              <div className="p-4 bg-rose-950/50 border border-rose-800/80 rounded-2xl text-xs text-rose-300 flex items-start gap-3">
-                <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <div className="font-bold text-rose-200 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                    <span>Anti-Sybil Guard Enforced</span>
-                    <span className="bg-rose-900/80 text-rose-200 px-2 py-0.5 rounded-full text-[10px] font-mono">Clamped at 42</span>
-                  </div>
-                  <p className="text-rose-300/90 leading-relaxed">
-                    This account attempted to accumulate points through metadata signals, but lacking both cryptographic NIP-05 DNS verification and core network proximity triggers deterministic damping capped strictly at 42 pts.
-                  </p>
+            {/* Endorsed By Root Anchors */}
+            {trustData.wotDetails?.endorsers && trustData.wotDetails.endorsers.length > 0 && (
+              <div className="p-4 bg-purple-950/30 rounded-2xl border border-purple-500/20">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <Users className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span className="text-xs font-bold text-purple-300 uppercase tracking-wider">
+                    Endorsed By ({trustData.wotDetails.endorsedByCount} Root Anchors)
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {trustData.wotDetails.endorsers.map((endorserName) => (
+                    <span
+                      key={endorserName}
+                      className="inline-flex items-center gap-1 bg-purple-500/15 border border-purple-500/30 text-purple-200 text-xs font-semibold px-2.5 py-1 rounded-full"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-purple-400 shrink-0" />
+                      {endorserName}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
 
+            {/* Anti-Sybil Economic Stake Dual Progress Bar */}
+            {trustData.economicStake && (trustData.economicStake.totalValidSats > 0 || trustData.economicStake.totalFilteredSats > 0) && (() => {
+              const verified = trustData.economicStake!.totalValidSats;
+              const filtered = trustData.economicStake!.totalFilteredSats;
+              const total = verified + filtered;
+              const verifiedPct = total > 0 ? Math.round((verified / total) * 100) : 0;
+              const filteredPct = total > 0 ? Math.round((filtered / total) * 100) : 0;
+
+              return (
+                <div className="p-4 bg-slate-950/70 rounded-2xl border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                        Anti-Sybil Economic Stake Analysis
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold text-slate-400">
+                      {total.toLocaleString()} Total Sats
+                    </span>
+                  </div>
+
+                  {/* Dual progress bar */}
+                  <div className="w-full h-5 rounded-full overflow-hidden bg-slate-800 flex">
+                    {verifiedPct > 0 && (
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-700 ease-out flex items-center justify-center"
+                        style={{ width: `${Math.max(verifiedPct, 3)}%` }}
+                      >
+                        {verifiedPct >= 15 && (
+                          <span className="text-[10px] font-black text-slate-950 px-1">
+                            {verifiedPct}%
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {filteredPct > 0 && (
+                      <div
+                        className="h-full bg-gradient-to-r from-rose-600 to-rose-500 transition-all duration-700 ease-out flex items-center justify-center"
+                        style={{ width: `${Math.max(filteredPct, 3)}%` }}
+                      >
+                        {filteredPct >= 15 && (
+                          <span className="text-[10px] font-black text-white/90 px-1">
+                            {filteredPct}%
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex items-center justify-between gap-4 text-xs flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="text-emerald-300 font-bold">
+                        Verified WoT Sats:
+                      </span>
+                      <span className="font-mono font-bold text-emerald-400">
+                        {verified.toLocaleString()}
+                      </span>
+                      <span className="text-slate-500">
+                        ({trustData.economicStake!.validZapsCount} zaps)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-rose-500 shrink-0" />
+                      <span className="text-rose-300 font-bold">
+                        Sybil Filtered:
+                      </span>
+                      <span className="font-mono font-bold text-rose-400">
+                        {filtered.toLocaleString()}
+                      </span>
+                      <span className="text-slate-500">
+                        ({trustData.economicStake!.filteredSybilZapsCount} zaps)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="p-4 bg-slate-950/40 rounded-2xl border border-slate-800/80 text-xs text-slate-400">
-              💡 <strong>Why this matters:</strong> Nostr keypairs are free to generate. This algorithm analyzes NIP-05 DNS signatures, Core Network Proximity, Lightning payment endpoints, account longevity, and profile entropy to prevent Sybil impersonation.
+              💡 <strong>Why this matters:</strong> Nostr keypairs are free to generate. This algorithm analyzes NIP-05 DNS signatures, Web-of-Trust graph, and Lightning payment endpoints to prevent Sybil impersonation.
             </div>
           </div>
 

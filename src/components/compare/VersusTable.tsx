@@ -26,17 +26,9 @@ export default function VersusTable({ dataA, dataB }: Props) {
   const nameA = dataA.displayName || dataA.name || "Creator A";
   const nameB = dataB.displayName || dataB.name || "Creator B";
 
-  // Build extra signals for enhanced scoring
-  const buildSignals = (d: NostrProfile) => ({
-    relayCount: d.relays_connected || 4,
-    hasNip65RelayList: Boolean(d.relays_connected && d.relays_connected > 2),
-    hasRecentNotes: false, // Not available in compare context
-    accountCreatedAt: d.created_at,
-  });
-
   // Compute Trust Scores for both profiles
-  const trustA = calculateTrustScore(dataA, undefined, buildSignals(dataA));
-  const trustB = calculateTrustScore(dataB, undefined, buildSignals(dataB));
+  const trustA = calculateTrustScore(dataA);
+  const trustB = calculateTrustScore(dataB);
 
   const truncateKey = (key: string) =>
     key ? `${key.slice(0, 8)}...${key.slice(-6)}` : "—";
@@ -45,9 +37,9 @@ export default function VersusTable({ dataA, dataB }: Props) {
   const winnerName = trustA.score >= trustB.score ? nameA : nameB;
   const loserName = trustA.score >= trustB.score ? nameB : nameA;
 
-  // Helper to find breakdown item by category
-  const getBreakdownItem = (breakdown: typeof trustA.breakdown, category: string) =>
-    breakdown.find((b) => b.category === category);
+  // Helper to find breakdown item with multi-key fallback matching
+  const getBreakdownItem = (breakdown: typeof trustA.breakdown, keys: string[]) =>
+    breakdown.find((b) => keys.includes(b.category) || keys.includes(b.label));
 
   return (
     <div className="space-y-8">
@@ -189,7 +181,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
             <div>
               {(() => {
-                const item = getBreakdownItem(trustA.breakdown, "Core Network Proximity & Graph Signal");
+                const item = getBreakdownItem(trustA.breakdown, ["Graph Connectivity", "Core Network Proximity & Graph Signal", "Web-of-Trust (WoT)"]);
                 return item ? (
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                     item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
@@ -201,7 +193,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
             <div>
               {(() => {
-                const item = getBreakdownItem(trustB.breakdown, "Core Network Proximity & Graph Signal");
+                const item = getBreakdownItem(trustB.breakdown, ["Graph Connectivity", "Core Network Proximity & Graph Signal", "Web-of-Trust (WoT)"]);
                 return item ? (
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                     item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
@@ -247,7 +239,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
             <div>
               {(() => {
-                const item = getBreakdownItem(trustA.breakdown, "Account Longevity");
+                const item = getBreakdownItem(trustA.breakdown, ["Network Longevity", "Account Longevity"]);
                 return item ? (
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                     item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
@@ -259,7 +251,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
             <div>
               {(() => {
-                const item = getBreakdownItem(trustB.breakdown, "Account Longevity");
+                const item = getBreakdownItem(trustB.breakdown, ["Network Longevity", "Account Longevity"]);
                 return item ? (
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                     item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
@@ -285,15 +277,15 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
           </div>
 
-          {/* 7. Profile Quality (Pillar 5) */}
+          {/* 7. Economic Stake / Entropy */}
           <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
               <User className="w-4 h-4 text-violet-600 shrink-0 hidden sm:inline" />
-              <span>Profile Entropy</span>
+              <span>Economic Stake / Entropy</span>
             </div>
             <div>
               {(() => {
-                const item = getBreakdownItem(trustA.breakdown, "Profile Quality");
+                const item = getBreakdownItem(trustA.breakdown, ["Economic Stake", "Lightning V4V", "Profile Quality"]);
                 return item ? (
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                     item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
@@ -305,7 +297,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
             <div>
               {(() => {
-                const item = getBreakdownItem(trustB.breakdown, "Profile Quality");
+                const item = getBreakdownItem(trustB.breakdown, ["Economic Stake", "Lightning V4V", "Profile Quality"]);
                 return item ? (
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                     item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
