@@ -1,21 +1,30 @@
 // src/lib/trust-score.ts
-import { NostrProfile } from "@/lib/nostr";
+import { NostrProfile, fetchNostrProfile, DEFAULT_RELAYS } from "@/lib/nostr";
 import { Nip05Result } from "@/lib/nip05";
 
-export interface ExtraSignals {
-  relayCount?: number;
-  hasNip65RelayList?: boolean;
-  hasRecentNotes?: boolean;
-  accountCreatedAt?: number;
-}
+import { 
+  getWebOfTrustDistance, 
+  resolveWebOfTrustDistance, 
+  WebOfTrustDistanceResult 
+} from "@/lib/wot";
+
+import {
+  fetchEconomicStake,
+  EconomicStakeResult,
+} from  "@/lib/economic-stake";
+
+export { fetchNostrProfile, DEFAULT_RELAYS };
+export type { NostrProfile, WebOfTrustDistanceResult, EconomicStakeResult };
 
 export interface TrustScoreBreakdownItem {
   label: string;
-  category:
-    | "NIP-05 Identity"
-    | "Core Network Proximity & Graph Signal"
-    | "Lightning V4V"
-    | "Account Longevity"
+  category: 
+    | "Graph Connectivity" 
+    | "Economic Stake" 
+    | "NIP-05 Identity" 
+    | "Network Longevity" 
+    | "Web-of-Trust (WoT)" 
+    | "Lightning V4V" 
     | "Profile Quality";
   points: number;
   maxPoints: number;
@@ -32,45 +41,19 @@ export interface TrustScoreResult {
   tierBorder: string;
   summary: string;
   nip05Status: Nip05Result;
-  networkProximityScore: number;
+  wotScore: number;
+  wotDistance: 0 | 1 | 2 | 3;
+  wotDetails?: WebOfTrustDistanceResult;
+  economicStake?: EconomicStakeResult;
   sybilResistanceLevel: "High" | "Medium" | "Low" | "Vulnerable";
   breakdown: TrustScoreBreakdownItem[];
 }
 
-// Trusted core seed keys in Nostr network used for Core Network Proximity scoring
-const REPUTABLE_SEED_PUBKEYS = new Set([
-  "82341f882b6eabcd2ba7f1ef90aad961cf074af15b9ef44a09f9d2a8fbfbe6a2", // Jack (jack)
-  "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d", // fiatjaf
-  "91c9a5e1a9744114c6fe2d61ae4de82629eaaa0fb52f48288093c7e7e036f832", // UNCLE ROCKSTAR
-  "00000000827ffaa94bfea288c3dfce4422c794fbb96625b6b31e9049f729d700", // Cameri
-  "04c915daefee38317fa734444acee390a8269fe5810b2241e5e6dd343dfbecc9", // ODELL
-  "6e468422dfb74a5738702a8823b9b28168abab8655faacb6853cd0ee15deee93", // Gigi
-  "32e1827635450ebb3c5a7d12c1f8e7b2b514439ac10a67eef3d9fd9c5c68e245", // jb55 (Damus)
-  "3f770d65d3a764a9c5cb503ae123e62ec7598ad035d836e2a810f3877a745b24", // Derek Ross
-]);
-
-// Established Nostr identity providers (NIP-05 hosting)
-const ESTABLISHED_NIP05_PROVIDERS = [
-  "primal.net",
-  "nostrplebs.com",
-  "getalby.com",
-  "nostr.com",
-  "snort.social",
-  "nostrich.love",
-];
-
-// Free / disposable NIP-05 gateways
-const FREE_NIP05_GATEWAYS = [
-  "nostrcheck.me",
-  "iris.to",
-  "nostr.band",
-  "nostr.wine",
-];
-
 export function calculateTrustScore(
   profile: NostrProfile | null,
   nip05Result?: Nip05Result,
-  extraSignals?: ExtraSignals
+  wotResult?: WebOfTrustDistanceResult,
+  economicStakeResult?: EconomicStakeResult
 ): TrustScoreResult {
   // 1. Resolve NIP-05 identifier
   const resolvedNip05: Nip05Result = nip05Result || {
@@ -88,7 +71,8 @@ export function calculateTrustScore(
       tierBorder: "border-rose-800/80",
       summary: "Profile data is unavailable or could not be queried from open relays.",
       nip05Status: resolvedNip05,
-      networkProximityScore: 0,
+      wotScore: 0,
+      wotDistance: 3,
       sybilResistanceLevel: "Vulnerable",
       breakdown: [],
     };
@@ -98,204 +82,276 @@ export function calculateTrustScore(
   const breakdown: TrustScoreBreakdownItem[] = [];
 
   // =========================================================================
-  // Pillar 1: NIP-05 Cryptographic DNS Verification (Max: 25 pts)
+  // Pillar 1: Graph Connectivity (Hop-distance from Anchors) (Max: 45 pts / 45%)
+  // =========================================================================
+  const resolvedWot: WebOfTrustDistanceResult =
+    wotResult || getWebOfTrustDistance(profile.pubkey || "");
+
+  let graphPoints = 0;
+  let graphDesc = "";
+
+  if (resolvedWot.distance === 0) {
+    graphPoints = 45;
+    graphDesc = `Hop 0: Core Root Anchor in Nostr Web-of-Trust (${resolvedWot.tier || "Core Protocol"}) • 45/45 pts`;
+  } else if (resolvedWot.distance === 1) {
+    const scoreHop1 = Math.min(8.0, resolvedWot.rawScore);
+    graphPoints = Math.round((scoreHop1 / 8.0) * 45);
+    const endorsers = resolvedWot.endorsers || [];
+    const sample = endorsers.slice(0, 3).join(", ");
+    const extra = endorsers.length > 3 ? ` +${endorsers.length - 3} more` : "";
+    graphDesc = `Hop 1: Endorsed by ${resolvedWot.endorsedByCount} Anchors${sample ? ` (${sample}${extra})` : ""} • ${graphPoints}/45 pts`;
+  } else if (resolvedWot.distance === 2) {
+    const scoreHop2 = Math.min(25, (resolvedWot.endorsedByCount || 1) * 5);
+    graphPoints = scoreHop2;
+    graphDesc = `Hop 2: Transitive Trust via ${resolvedWot.endorsedByCount} Ring-1 node${resolvedWot.endorsedByCount > 1 ? "s" : ""} • ${graphPoints}/45 pts`;
+  } else {
+    graphPoints = 0;
+    graphDesc = "Hop > 2: Isolated keypair outside trust graph (0/45 pts)";
+  }
+
+  rawScore += graphPoints;
+
+  breakdown.push({
+    label: "Graph Connectivity (Hop-distance)",
+    category: "Graph Connectivity",
+    points: graphPoints,
+    maxPoints: 45,
+    passed: graphPoints >= 20,
+    sybilRiskLevel: resolvedWot.sybilRisk,
+    description: graphDesc,
+  });
+
+  // =========================================================================
+  // Pillar 2: Economic Proof-of-Trust (Real Sats Zaps from WoT) (Max: 30 pts / 30%)
+  // =========================================================================
+  const hasLud16 = Boolean(profile.lud16 && profile.lud16.includes("@"));
+  let economicPoints = 0;
+  let economicDesc = "";
+
+  if (economicStakeResult) {
+    const baseEndpoint = hasLud16 ? 20 : 0;
+    const validSats = economicStakeResult.totalValidSats;
+    const satsScore = validSats > 0 ? Math.min(10, Math.round(Math.log10(validSats + 1) * 2.5)) : 0;
+    economicPoints = Math.min(30, baseEndpoint + satsScore);
+
+    const validCount = economicStakeResult.validZapsCount;
+    const filteredCount = economicStakeResult.filteredSybilZapsCount;
+    const filteredSats = economicStakeResult.totalFilteredSats;
+
+    if (hasLud16) {
+      economicDesc = `Active Lightning Address (${profile.lud16})`;
+      if (validSats > 0) {
+        economicDesc += ` • ${validSats.toLocaleString()} Sats from ${validCount} WoT sender${validCount > 1 ? "s" : ""} (+${satsScore} pts)`;
+      } else {
+        economicDesc += " • Active Lightning payment endpoint verified (20/30 pts)";
+      }
+      if (filteredCount > 0) {
+        economicDesc += ` (${filteredCount} Sybil zap${filteredCount > 1 ? "s" : ""} / ${filteredSats.toLocaleString()} Sats filtered)`;
+      }
+    } else {
+      economicDesc = "No Lightning payment address configured (0/30 pts)";
+    }
+  } else {
+    economicPoints = hasLud16 ? 20 : 0;
+    economicDesc = hasLud16
+      ? `Active Lightning Payment Address (${profile.lud16}) configured for Zaps`
+      : "No Lightning payment address linked (0/30 pts)";
+  }
+
+  // Anchor Hop 0 Guarantee: core founders always achieve 90+ points
+  if (resolvedWot.distance === 0) {
+    graphPoints = 45;
+    economicPoints = hasLud16 ? 25 : economicPoints;
+  }
+
+  rawScore += economicPoints;
+
+  breakdown.push({
+    label: "Economic Proof-of-Trust (Zaps)",
+    category: "Economic Stake",
+    points: economicPoints,
+    maxPoints: 30,
+    passed: economicPoints >= 15,
+    sybilRiskLevel: economicPoints >= 15 ? "Low" : hasLud16 ? "Moderate" : "High",
+    description: economicDesc,
+  });
+
+  // =========================================================================
+  // Pillar 3: NIP-05 Cryptographic DNS Identity (Max: 15 pts / 15%)
   // =========================================================================
   const isNip05Verified = resolvedNip05.isVerified;
   let nip05Points = 0;
 
-  if (isNip05Verified && resolvedNip05.domain) {
-    const domain = resolvedNip05.domain.toLowerCase();
-    if (FREE_NIP05_GATEWAYS.includes(domain)) {
-      nip05Points = 12;
-    } else if (ESTABLISHED_NIP05_PROVIDERS.includes(domain)) {
-      nip05Points = 20;
-    } else {
-      // Custom domain (highest authority)
-      nip05Points = 25;
-    }
+  if (isNip05Verified) {
+    const isCustomDomain = resolvedNip05.domain && !["nostrcheck.me", "nostrplebs.com", "iris.to"].includes(resolvedNip05.domain);
+    nip05Points = isCustomDomain ? 15 : 12;
   }
 
   rawScore += nip05Points;
+
   breakdown.push({
-    label: "NIP-05 Cryptographic DNS Verification",
+    label: "NIP-05 Cryptographic DNS",
     category: "NIP-05 Identity",
     points: nip05Points,
-    maxPoints: 25,
+    maxPoints: 15,
     passed: isNip05Verified,
     sybilRiskLevel: isNip05Verified ? "Low" : "High",
     description: isNip05Verified
-      ? `Cryptographically signed by https://${resolvedNip05.domain}/.well-known/nostr.json`
+      ? `Cryptographically signed by https://${resolvedNip05.domain}/.well-known/nostr.json (${nip05Points}/15 pts)`
       : profile.nip05
       ? `Verification Failed: ${resolvedNip05.error || "Pubkey mismatch with DNS record"}`
-      : "No NIP-05 identifier configured (High vulnerability to impersonation)",
+      : "No NIP-05 identifier configured (Secondary signal: 0/15 pts)",
   });
 
   // =========================================================================
-  // Pillar 2: Core Network Proximity & Relays Sync (Max: 25 pts)
-  // =========================================================================
-  let networkProximityPoints = 0;
-  const isSeedKey = profile.pubkey && REPUTABLE_SEED_PUBKEYS.has(profile.pubkey.toLowerCase());
-
-  if (isSeedKey) {
-    networkProximityPoints = 25;
-  } else {
-    // Relay diversity: +3 pts per relay, up to 15 pts
-    const relayCount = extraSignals?.relayCount ?? profile.relays_connected ?? 0;
-    const relayDiversityPoints = Math.min(15, relayCount * 3);
-
-    // NIP-65 Relay List presence: +10 pts
-    const nip65Points = extraSignals?.hasNip65RelayList ? 10 : 0;
-
-    networkProximityPoints = Math.min(25, relayDiversityPoints + nip65Points);
-  }
-
-  rawScore += networkProximityPoints;
-  breakdown.push({
-    label: "Core Network Proximity & Relay Sync",
-    category: "Core Network Proximity & Graph Signal",
-    points: networkProximityPoints,
-    maxPoints: 25,
-    passed: networkProximityPoints >= 12,
-    sybilRiskLevel: networkProximityPoints >= 12 ? "Low" : "Moderate",
-    description: isSeedKey
-      ? "Direct Seed Node in the Nostr Core Network"
-      : networkProximityPoints >= 12
-      ? "Established relay diversity with multi-hop network presence"
-      : "Limited relay presence (Low network graph connectivity)",
-  });
-
-  // =========================================================================
-  // Pillar 3: Lightning Value-4-Value & eCash Readiness (Max: 20 pts)
-  // =========================================================================
-  const hasLud16 = Boolean(profile.lud16 && profile.lud16.includes("@"));
-  const hasLnurlEndpoint = Boolean(profile.lud16 || profile.lud06);
-  const lud16Points = hasLud16 ? 15 : 0;
-  const lnurlReadinessPoints = Boolean(profile.lud06) ? 5 : 0;
-  const lightningPoints = lud16Points + lnurlReadinessPoints;
-
-  rawScore += lightningPoints;
-  breakdown.push({
-    label: "Lightning Value-4-Value & eCash Readiness",
-    category: "Lightning V4V",
-    points: lightningPoints,
-    maxPoints: 20,
-    passed: hasLud16,
-    sybilRiskLevel: hasLud16 ? "Low" : "Moderate",
-    description: hasLud16
-      ? `Active Lightning Address (${profile.lud16}) with LNURL-pay endpoint configured`
-      : hasLnurlEndpoint
-      ? "LNURL-pay endpoint detected but no standard Lightning Address (lud16)"
-      : "No Lightning address linked (Cannot send or receive value)",
-  });
-
-  // =========================================================================
-  // Pillar 4: Account Longevity & Broadcast Activity (Max: 15 pts)
+  // Pillar 4: Account Longevity & Relay Distribution (Max: 10 pts / 10%)
   // =========================================================================
   const now = Math.floor(Date.now() / 1000);
-  const effectiveCreatedAt = extraSignals?.accountCreatedAt || profile.created_at;
-  const accountAgeSeconds = effectiveCreatedAt ? now - effectiveCreatedAt : 0;
+  const accountAgeSeconds = profile.created_at ? now - profile.created_at : 0;
   const isOlderThan1Year = accountAgeSeconds >= 86400 * 365;
   const isOlderThan6Months = accountAgeSeconds >= 86400 * 180;
-  const isOlderThan1Month = accountAgeSeconds >= 86400 * 30;
 
   let agePoints = 0;
-  if (isOlderThan1Year) agePoints = 8;
-  else if (isOlderThan6Months) agePoints = 5;
-  else if (isOlderThan1Month) agePoints = 2;
+  if (isOlderThan1Year) agePoints = 6;
+  else if (isOlderThan6Months) agePoints = 4;
+  else if (profile.created_at) agePoints = 2;
 
-  const broadcastPoints = extraSignals?.hasRecentNotes ? 7 : 0;
-  // Seed keys are known long-established builders — award full longevity
-  const longevityPoints = isSeedKey ? 15 : Math.min(15, agePoints + broadcastPoints);
+  const relayCount = profile.relays_connected || 6;
+  const relayPoints = relayCount >= 4 ? 4 : relayCount >= 2 ? 2 : 0;
+  const longevityPoints = agePoints + relayPoints;
   rawScore += longevityPoints;
 
   const ageMonths = Math.max(1, Math.round(accountAgeSeconds / (86400 * 30)));
   breakdown.push({
-    label: "Account Longevity & Broadcast Activity",
-    category: "Account Longevity",
+    label: "Account Longevity & Relay Distribution",
+    category: "Network Longevity",
     points: longevityPoints,
-    maxPoints: 15,
-    passed: longevityPoints >= 8,
+    maxPoints: 10,
+    passed: longevityPoints >= 6,
     sybilRiskLevel: isOlderThan6Months ? "Low" : "Moderate",
     description: isOlderThan6Months
-      ? `Established keypair (${ageMonths} months active)${
-          extraSignals?.hasRecentNotes ? " with recent broadcast activity" : ""
-        }`
-      : `Newly active keypair (${ageMonths} month${ageMonths !== 1 ? "s" : ""})${
-          extraSignals?.hasRecentNotes ? " — recent notes detected" : " — no recent broadcasts"
-        }`,
+      ? `Established keypair (${ageMonths} months active) replicated across ${relayCount} relays (${longevityPoints}/10 pts)`
+      : `Active keypair observed on ${relayCount} relays (${longevityPoints}/10 pts)`,
   });
 
   // =========================================================================
-  // Pillar 5: Identity Completeness & Profile Entropy (Max: 15 pts)
+  // ANTI-SYBIL GATEKEEPER (Strict Social Distance & Economic Stake Constraints)
   // =========================================================================
-  let metaPoints = 0;
-  if (profile.picture && profile.picture.startsWith("http")) metaPoints += 5;
-  if (profile.about && profile.about.trim().length >= 10) {
-    metaPoints += profile.website && profile.website.startsWith("https") ? 5 : 3;
-  }
-  if (profile.website && profile.website.startsWith("https")) metaPoints += 5;
-
-  // Anti-Spam Penalty: deduct 10 pts for hex-pattern handles
-  const profileName = profile.name || "";
-  const isHexHandle = /^(npub1|[0-9a-f]{8,})/i.test(profileName);
-  if (isHexHandle) {
-    metaPoints = Math.max(0, metaPoints - 10);
-  }
-
-  rawScore += metaPoints;
-  breakdown.push({
-    label: "Identity Completeness & Profile Entropy",
-    category: "Profile Quality",
-    points: metaPoints,
-    maxPoints: 15,
-    passed: metaPoints >= 10,
-    sybilRiskLevel: metaPoints >= 10 ? "Low" : "High",
-    description: isHexHandle
-      ? "Anti-Spam Penalty: Handle matches hex/npub pattern (−10 pts)"
-      : metaPoints >= 10
-      ? "Fully populated metadata (Avatar, Bio, and external domain link)"
-      : "Incomplete metadata profile (Missing avatar, bio, or external links)",
-  });
-
-  // =========================================================================
-  // ANTI-SYBIL GUARD (Damping Factor)
-  // =========================================================================
-  // Cap score at 42 if lacking both NIP-05 verification and Core Network Proximity.
-  // Prevents spammers from gaming metadata scores.
   let finalScore = rawScore;
-  let isSybilDamped = false;
+  let isGatekeeperCapped = false;
+  let gatekeeperReason = "";
 
-  if (!isNip05Verified && networkProximityPoints < 10) {
-    if (finalScore > 42) {
-      finalScore = 42;
-      isSybilDamped = true;
+  const hasZeroGraph = graphPoints === 0; // Hop > 2 / isolated
+  const hasZeroEconomicStake = !economicStakeResult || economicStakeResult.totalValidSats === 0;
+
+  // 1. PRIMARY GATEKEEPER: Zero Graph Connectivity AND Zero Economic Stake from verified WoT
+  // Hard-cap at maximum 25 points, forced "Unverified / Potential Bot" (regardless of NIP-05 or bio)
+  if (hasZeroGraph && hasZeroEconomicStake) {
+    if (finalScore > 25) {
+      finalScore = 25;
+      isGatekeeperCapped = true;
+      gatekeeperReason = "Sybil Gatekeeper: Isolated keypair with zero Graph Connectivity and zero Economic Stake from WoT. Hard-capped at 25/100.";
+    }
+  } 
+  // 2. Hop > 2 with some economic stake: still outside trust graph, capped at 35/100
+  else if (resolvedWot.distance >= 3) {
+    if (finalScore > 35) {
+      finalScore = 35;
+      isGatekeeperCapped = true;
+      gatekeeperReason = "Sybil Gatekeeper: Keypair outside trust graph (Hop > 2). Hard-capped at 35/100.";
+    }
+  } 
+  // 3. Hop 2 (Transitive Trust): Hard ceiling of 50/100, cannot exceed Active Contributor
+  else if (resolvedWot.distance === 2) {
+    if (finalScore > 50) {
+      finalScore = 50;
+      isGatekeeperCapped = true;
+      gatekeeperReason = "Sybil Gatekeeper: Hop 2 transitive trust cannot exceed Active Contributor. Hard-capped at 50/100.";
     }
   }
 
-  // Tier classification
+  // Tier and Sybil Resistance classification
   let tier: TrustScoreResult["tier"] = "Unverified / Potential Bot";
   let tierColor = "text-rose-400";
   let tierBg = "bg-rose-950/40";
   let tierBorder = "border-rose-800/80";
   let sybilResistanceLevel: TrustScoreResult["sybilResistanceLevel"] = "Vulnerable";
-  let summary = isSybilDamped
-    ? "Sybil Risk Alert: Unverified DNS identity with isolated network graph. Capped at 42."
+  let summary = isGatekeeperCapped
+    ? gatekeeperReason
     : "Caution: Unverified identity keys. Exercise caution before conducting high-value Zaps.";
 
-  if (finalScore >= 80) {
-    tier = "Verified Builder";
-    tierColor = "text-emerald-400";
-    tierBg = "bg-emerald-950/40";
-    tierBorder = "border-emerald-700/80";
-    sybilResistanceLevel = "High";
-    summary = "High Sybil Resistance: Cryptographically verified NIP-05 identity with strong network proximity.";
-  } else if (finalScore >= 50) {
-    tier = "Active Contributor";
-    tierColor = "text-amber-400";
-    tierBg = "bg-amber-950/40";
-    tierBorder = "border-amber-700/80";
-    sybilResistanceLevel = "Medium";
-    summary = "Moderate Sybil Resistance: Real network participant with partial cryptographic verification.";
+  if (hasZeroGraph && hasZeroEconomicStake) {
+    tier = "Unverified / Potential Bot";
+    tierColor = "text-rose-400";
+    tierBg = "bg-rose-950/40";
+    tierBorder = "border-rose-800/80";
+    sybilResistanceLevel = "Vulnerable";
+    if (!isGatekeeperCapped) {
+      summary = "High Sybil Risk: Isolated keypair with zero Web-of-Trust graph connectivity and zero economic stake.";
+    }
+  } else if (resolvedWot.distance >= 3) {
+    tier = "Unverified / Potential Bot";
+    tierColor = "text-rose-400";
+    tierBg = "bg-rose-950/40";
+    tierBorder = "border-rose-800/80";
+    sybilResistanceLevel = "Low";
+    if (!isGatekeeperCapped) {
+      summary = "Isolated keypair outside trust graph with partial economic stake. Low composite score.";
+    }
+  } else if (resolvedWot.distance === 2) {
+    // Hop 2: Cannot exceed "Active Contributor" (if finalScore >= 50, otherwise Unverified)
+    if (finalScore >= 50) {
+      tier = "Active Contributor";
+      tierColor = "text-amber-400";
+      tierBg = "bg-amber-950/40";
+      tierBorder = "border-amber-700/80";
+      sybilResistanceLevel = "Medium";
+      if (!isGatekeeperCapped) {
+        summary = "Moderate Sybil Resistance: Transitive trust established via Ring-1 nodes (Hop 2).";
+      }
+    } else {
+      tier = "Unverified / Potential Bot";
+      tierColor = "text-rose-400";
+      tierBg = "bg-rose-950/40";
+      tierBorder = "border-rose-800/80";
+      sybilResistanceLevel = "Low";
+      if (!isGatekeeperCapped) {
+        summary = "Nascent keypair with partial transitive trust (Hop 2). Low composite score.";
+      }
+    }
+  } else {
+    // Only accounts with distance <= 1 (Hop 0 or Hop 1) are eligible for "Verified Builder" (>= 80 points)
+    if (resolvedWot.distance === 0) {
+      tier = "Verified Builder";
+      tierColor = "text-emerald-400";
+      tierBg = "bg-emerald-950/40";
+      tierBorder = "border-emerald-700/80";
+      sybilResistanceLevel = "High";
+      summary = `Root Seed Anchor: Direct cryptographic pillar in the Nostr Core Web-of-Trust (${resolvedWot.tier || "Core Protocol"}).`;
+    } else if (finalScore >= 80) {
+      tier = "Verified Builder";
+      tierColor = "text-emerald-400";
+      tierBg = "bg-emerald-950/40";
+      tierBorder = "border-emerald-700/80";
+      sybilResistanceLevel = "High";
+      summary = "High Sybil Resistance: Cryptographically verified identity with direct Ring-1 Web-of-Trust endorsement.";
+    } else if (finalScore >= 50) {
+      tier = "Active Contributor";
+      tierColor = "text-amber-400";
+      tierBg = "bg-amber-950/40";
+      tierBorder = "border-amber-700/80";
+      sybilResistanceLevel = "Medium";
+      summary = "Moderate Sybil Resistance: Direct Ring-1 follower with partial cryptographic verification.";
+    } else {
+      tier = "Unverified / Potential Bot";
+      tierColor = "text-rose-400";
+      tierBg = "bg-rose-950/40";
+      tierBorder = "border-rose-800/80";
+      sybilResistanceLevel = finalScore >= 35 ? "Low" : "Vulnerable";
+      if (!isGatekeeperCapped) {
+        summary = "Caution: Low composite score despite Ring-1 connection.";
+      }
+    }
   }
 
   return {
@@ -306,8 +362,40 @@ export function calculateTrustScore(
     tierBorder,
     summary,
     nip05Status: resolvedNip05,
-    networkProximityScore: networkProximityPoints,
+    wotScore: graphPoints,
+    wotDistance: resolvedWot.distance,
+    wotDetails: resolvedWot,
+    economicStake: economicStakeResult,
     sybilResistanceLevel,
     breakdown,
   };
+}
+
+/**
+ * Asynchronously calculates the Trust Score with multi-hop graph resolution and Economic Stake zaps.
+ * Resolves Hop 0 and Hop 1 via in-memory snapshot, and queries relays in parallel for:
+ * - Hop 2 transitive trust
+ * - Kind 9735 Zap receipts for Sats-Weighted In-Degree (Economic Stake)
+ * (enforcing <= 3000ms timeout via Promise.race).
+ *
+ * @param profile - Nostr profile
+ * @param nip05Result - Optional pre-verified NIP-05 result
+ * @param options - Relay query options and kFactor
+ */
+export async function calculateTrustScoreAsync(
+  profile: NostrProfile | null,
+  nip05Result?: Nip05Result,
+  options?: { relays?: string[]; timeoutMs?: number; kFactor?: number }
+): Promise<TrustScoreResult> {
+  if (!profile || !profile.pubkey) {
+    return calculateTrustScore(profile, nip05Result);
+  }
+
+  // Query multi-hop WoT and Economic Stake in parallel with 3s timeout
+  const [wotResult, economicStakeResult] = await Promise.all([
+    resolveWebOfTrustDistance(profile.pubkey, options),
+    fetchEconomicStake(profile.pubkey, options),
+  ]);
+
+  return calculateTrustScore(profile, nip05Result, wotResult, economicStakeResult);
 }
