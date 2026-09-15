@@ -12,6 +12,8 @@
     "@base-ui/react": "^1.7.0",
     "@cashu/cashu-ts": "^4.9.0",
     "@getalby/bitcoin-connect": "^3.12.3",
+    "@google/genai": "^2.22.0",
+    "@libsql/client": "^0.18.0",
     "@supabase/supabase-js": "^2.112.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

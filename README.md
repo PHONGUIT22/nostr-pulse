@@ -1,10 +1,12 @@
 <div align="center">
 
 # ⚡ NostrPulse
-### Sovereign Identity Analytics, Anti-Sybil Reputation Engine & Full-Cycle Chaumian eCash Protocol Client
+### Sovereign Web-of-Trust Graph Engine, Sats-Weighted Anti-Sybil Defense & Full-Cycle Chaumian eCash Protocol Client
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-9333EA?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Track](https://img.shields.io/badge/Track_2-Freedom_Stack-F7931A?style=for-the-badge&logo=bitcoin&logoColor=white)](https://bitshala.org)
+[![Web-of-Trust](https://img.shields.io/badge/Web--of--Trust-5%2C544_Ring--1_Nodes-8A2BE2?style=for-the-badge)](src/data/ring1-cache.json)
+[![Economic Stake](https://img.shields.io/badge/Anti--Sybil-Sats--Weighted_In--Degree-F7931A?style=for-the-badge&logo=bitcoin)](src/lib/economic-stake.ts)
 [![Nostr Protocol](https://img.shields.io/badge/Nostr-NIPs_Compliant-8A2BE2?style=for-the-badge&logo=nostr)](https://github.com/nostr-protocol/nips)
 [![Cashu Protocol](https://img.shields.io/badge/Cashu-NUTs_V4_eCash-00D084?style=for-the-badge)](https://cashu.space)
 [![Next.js 16](https://img.shields.io/badge/Next.js_16-App_Router-000000?style=for-the-badge&logo=next.js)](https://nextjs.org/)
@@ -69,10 +71,14 @@ Standard Lightning Zaps (NIP-57) require real-time coordination. If a creator's 
 +-----------------------------------------------------------------------------------+
 |                           NOSTRPULSE FREEDOM STACK                                |
 +-----------------------------------------------------------------------------------+
-|  1. SOVEREIGN REPUTATION LAYER (Sub-50ms Heuristic Matrix)                        |
-|     - NIP-05 DNS Cryptographic Verification (Domain ownership anchor)             |
-|     - Core Network Seed Proximity & NIP-65 dynamic relay diversity                 |
-|     - Anti-Sybil Damping Guard: Clamps unverified identities strictly at 42 pts   |
+|  1. GRAPH-THEORETIC SOVEREIGN REPUTATION LAYER                                    |
+|     - 4-Tier Web-of-Trust Graph: Hop 0 (Core Root Anchors), Hop 1 (Ring-1),       |
+|       Hop 2 (Transitive Trust), Hop 3 (Isolated / Sybil Risk)                     |
+|     - High-Performance Ring-1 Snapshot: 5,544 nodes pre-computed in RAM (< 3ms)   |
+|     - Sats-Weighted In-Degree (Pillar 2): Logarithmic economic stake with         |
+|       strict self-zap wash trading rejection and Sybil clone filtering            |
+|     - NIP-05 DNS Anchor: Cryptographic HTTPS .well-known DNS identity mapping     |
+|     - Strict Gatekeeper: Clamps isolated keys without graph/stake at <= 25 pts    |
 +-----------------------------------------------------------------------------------+
 |  2. ASYNCHRONOUS VALUE SETTLEMENT LAYER (Dual-Rail Micro-Payments)                |
 |     - Synchronous Rail: NIP-57 Lightning Zaps with WebLN auto-dispatch            |
@@ -83,6 +89,11 @@ Standard Lightning Zaps (NIP-57) require real-time coordination. If a creator's 
 |  3. DUAL NETWORK TRANSPORT ENGINE                                                 |
 |     - Fast Edge Cache: Accelerated metadata telemetry via Primal edge             |
 |     - Pure P2P Mode: 100% direct browser-to-relay WebSockets via SimplePool       |
++-----------------------------------------------------------------------------------+
+|  4. INTEROPERABILITY & OPEN PROTOCOL ADOPTION                                     |
+|     - Standalone Embeddable Widget: Zero-dependency Vanilla JS (widget.js)        |
+|     - Public Open API: CORS-enabled /api/v1/trust-score/[pubkey] for 3rd-party    |
+|       Nostr clients (Amethyst, Coracle, etc.)                                     |
 +-----------------------------------------------------------------------------------+
 ```
 
@@ -96,11 +107,11 @@ You can evaluate the complete system without installing browser extensions or sp
 1. Navigate to the **[NostrPulse Homepage](https://nostrpulse.vercel.app/)**.
 2. Immediately below the search bar, locate the **Live Interactive Demo** section.
 3. Click **🔥 Inspect Verified Builder** ([fiatjaf](https://nostrpulse.vercel.app/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6)):
-   - Observe the **88 pts** score with the emerald `Verified Builder` tier.
-   - Inspect the verified NIP-05 DNS signature (`_@fiatjaf.com`) and core seed node network proximity (25/25 pts).
+   - Observe the **95 pts** score with the emerald `Verified Builder` tier.
+   - Inspect the **Hop 0: Core Root Anchor** cryptographic status (45/45 graph pts), verified NIP-05 DNS signature (`_@fiatjaf.com`), active Lightning endpoint, and network longevity.
 4. Click **⚠️ Inspect Sybil Bot Clone** ([anon_bot](https://nostrpulse.vercel.app/p/anon_bot)):
-   - Observe how synthetic profile metadata (avatar, bio, external link) accumulated 45+ raw points.
-   - Notice the **Anti-Sybil Guard Enforced** banner: because it lacks verified DNS and core network proximity, its score is **clamped at 42 pts** (`Unverified / Potential Bot`).
+   - Observe how synthetic profile metadata (avatar, bio, external link) accumulated raw points.
+   - Notice the **Anti-Sybil Gatekeeper Enforced**: because it has zero graph connectivity (`distance = 3`) and zero incoming WoT sats, its score is **strictly hard-capped at $\le$ 25 pts** (`Unverified / Potential Bot`, `Vulnerable` Sybil resistance), mathematically preventing metadata gaming.
 
 ---
 
@@ -131,19 +142,46 @@ You can evaluate the complete system without installing browser extensions or sp
 
 ---
 
+### Step 4: Standalone NutZap Widget & Public REST API
+
+1. **Test Standalone NutZap Widget (`widget.js`):**
+   - NostrPulse ships with a zero-dependency Vanilla JS embed script at `/widget.js`.
+   - Any website, blog, or static creator page can embed eCash tipping with a single line:
+     ```html
+     <script src="https://nostrpulse.vercel.app/widget.js" data-npub="npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" data-name="fiatjaf" async></script>
+     ```
+   - Alternatively, use the custom Web Component:
+     ```html
+     <nutzap-me npub="npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" name="fiatjaf" amount="100"></nutzap-me>
+     ```
+   - Try the interactive live preview inside the **Embed Badge** modal on any profile.
+
+2. **Test Public Open Reputation REST API:**
+   - External Nostr clients (Amethyst, Coracle, Snort) can query the CORS-enabled trust endpoint directly for anti-spam filtering:
+     ```bash
+     curl -s https://nostrpulse.vercel.app/api/v1/trust-score/3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d
+     ```
+   - Returns structured JSON containing `score`, `tier`, `wot.distance`, `wot.endorsers_count`, `economic_stake.total_valid_sats`, and `sybil_resistance_level`.
+
+---
+
 ## 📊 Finished vs. Unfinished Matrix
 
 We believe in radical transparency regarding what was built and tested during the hackathon versus planned future iterations:
 
 | Feature / Subsystem | Status | Implementation Details & Test Coverage |
 | :--- | :---: | :--- |
-| **5-Pillar Heuristic Anti-Sybil Matrix** | **Finished** | 100% client-side deterministic scoring (< 50ms) across DNS, graph proximity, V4V readiness, longevity, and entropy. |
-| **The 42-Point Anti-Sybil Damping Guard** | **Finished** | Algorithmic ceiling strictly clamping unverified accounts with isolated network presence to 42 points max. |
+| **Web-of-Trust Ring-1 Graph Engine** | **Finished** | 5,544 nodes pre-computed in [`src/data/ring1-cache.json`](src/data/ring1-cache.json), $O(1)$ memory lookup ($< 3\text{ms}$), 21 curated Root Anchors across 4 tiers. |
+| **Sats-Weighted In-Degree Filter** | **Finished** | Sub-linear logarithmic economic stake ($\log_{10}(\text{sats}+1) \times 2.5$) with strict self-zap wash trade rejection and Sybil clone filtering. |
+| **Multi-Hop Transitive Trust Resolver** | **Finished** | 4-Tier social distance classification (Hop 0–3) with bounded relay timeouts ($\le 3000\text{ms}$) via `Promise.race`. |
+| **Anti-Sybil Gatekeeper Guard** | **Finished** | Mathematical hard ceilings: $\le 25\text{ pts}$ for isolated keys without WoT stake, $\le 35\text{ pts}$ for Hop 3+ with stake, $\le 50\text{ pts}$ for Hop 2. |
 | **Zero-Dependency RFC 8949 CBOR Decoder** | **Finished** | Handcrafted parser in [`src/lib/cashu.ts`](src/lib/cashu.ts) supporting Major types 0–7 and 64-bit integers with zero npm dependencies. |
 | **Full-Cycle NIP-61 NutZap Sender Pipeline** | **Finished** | Supports BOLT-11 quote minting, NIP-44 v2 encryption, and Kind 9321 multi-relay broadcasting. |
 | **NIP-61 NutZap Receiver Inbox** | **Finished** | Open-relay ingestion for Kind 9321 events, client-side NIP-44 decryption, and live event refresh. |
 | **Truncated Keyset ID Auto-Expansion** | **Finished** | Resolves the 16-hex vs 66-hex Cashu V4 mismatch via `/v1/keysets` prefix matching before proof swap. |
 | **Fail-Closed NUT-07 Double-Spend Shield** | **Finished** | Real-time proof-state checks against the mint; fails closed on unresponsive endpoints to prevent false positives. |
+| **Standalone Embeddable NutZap Widget** | **Finished** | Zero-dependency script and Web Component in [`public/widget.js`](public/widget.js) with Lightning mint quote and proof swap. |
+| **Public Open Trust Score REST API** | **Finished** | CORS-enabled public endpoint at `/api/v1/trust-score/[pubkey]` with structured WoT graph and economic stake metrics. |
 | **Dual Network Engine (Fast vs Pure P2P)** | **Finished** | Global navbar toggle switching between Primal Edge cache and 100% direct WebSocket connections via `SimplePool`. |
 | **Head-to-Head Compare Arena** | **Finished** | Side-by-side identity and trust matrix comparison at `/compare`. |
 | **Relay Telemetry Monitor** | **Finished** | Live latency and WebSocket connection health dashboard across decentralized relays at `/relays`. |
@@ -204,8 +242,9 @@ NostrPulse strictly adheres to open specifications across both the Nostr and Cas
 | **NIP-19** | Entities | Bech32 entity encoding/decoding (`npub`, `note`, `nprofile`) | ✅ Fully Supported |
 | **NIP-44 v2** | Privacy | ChaCha20-Poly1305 authenticated end-to-end encryption | ✅ Fully Supported |
 | **NIP-57** | Lightning | Synchronous Lightning Zaps (Kind 9734 request & Kind 9735 receipt) | ✅ Fully Supported |
-| **NIP-61** | Chaumian eCash | Asynchronous NutZaps via Kind 9321 events | ✅ Fully Supported |
+| **NIP-60 / NIP-61** | Chaumian eCash | Asynchronous NutZaps via Kind 9321 events & standalone `widget.js` | ✅ Fully Supported |
 | **NIP-65** | Routing | Relay List Metadata (Kind 10002) for dynamic outbox routing | ✅ Fully Supported |
+| **NIP-89 / NIP-90** | App / DVM | Open reputation schema & computational data provider standards (`/api/v1`) | ✅ Fully Supported |
 | **NUT-00** | Cashu Tokens | V3 JSON (`cashuA`) and V4 binary CBOR (`cashuB`) specifications | ✅ Fully Supported |
 | **NUT-02** | Cashu Mint | Keyset ID discovery and status endpoints (`/v1/keysets`) | ✅ Fully Supported |
 | **NUT-03** | Cashu Swap | Token swapping and proof exchange for recipient ownership | ✅ Fully Supported |
@@ -218,13 +257,18 @@ NostrPulse strictly adheres to open specifications across both the Nostr and Cas
 
 ```text
 nostr-pulse/
+├── public/
+│   └── widget.js                # Zero-dep standalone embeddable NutZap button
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx                 # Homepage with Live Interactive Demo
 │   │   ├── p/[npub]/page.tsx        # Profile dashboard, Trust Score breakdown, NutZap Inbox
 │   │   ├── compare/page.tsx         # Head-to-Head Creator Versus arena
 │   │   ├── relays/page.tsx          # Real-time WebSocket relay latency monitor
-│   │   └── api/badge/[npub]/        # Dynamic SVG reputation badge generator
+│   │   └── api/
+│   │       ├── badge/[npub]/        # Dynamic SVG reputation badge generator
+│   │       ├── v1/trust-score/      # Public open REST API for external clients
+│   │       └── widget/              # Backend quote & claim routes for widget.js
 │   ├── components/
 │   │   ├── home/
 │   │   │   └── HeroSearchSection.tsx# 1-Click Interactive Demo buttons (fiatjaf vs anon_bot)
@@ -232,12 +276,17 @@ nostr-pulse/
 │   │   │   ├── NutZapInbox.tsx      # Kind 9321 inbox, NIP-44 decryption, proof swap
 │   │   │   ├── LightningZapCard.tsx # Dual-rail payment card (Lightning + Cashu)
 │   │   │   ├── LiveZapFeed.tsx      # Real-time WebSocket streaming Kind 9735 receipts
-│   │   │   └── TrustScoreCard.tsx   # 5-Pillar matrix & Anti-Sybil damping indicator
+│   │   │   └── TrustScoreCard.tsx   # 5-Pillar matrix & Anti-Sybil gatekeeper indicator
 │   │   └── layout/
 │   │       └── Navbar.tsx           # Global navigation with network mode toggle
+│   ├── data/
+│   │   └── ring1-cache.json         # 5,544 pre-computed Ring-1 nodes snapshot
 │   └── lib/
+│       ├── anchors.ts               # 21 curated Root Anchors registry across 4 tiers
+│       ├── wot.ts                   # Web-of-Trust graph distance resolver
+│       ├── economic-stake.ts        # Sats-weighted in-degree & wash trading defense
 │       ├── cashu.ts                 # Zero-dep CBOR decoder, NutZap engine, Keyset resolution
-│       ├── trust-score.ts           # 5-Pillar scoring matrix & Anti-Sybil damping guard
+│       ├── trust-score.ts           # 5-Pillar scoring matrix & Anti-Sybil Gatekeeper guard
 │       ├── nip05.ts                 # Cryptographic DNS record verification
 │       ├── network-mode.ts          # State manager: Fast Cache vs. Pure P2P
 │       └── nostr.ts                 # SimplePool relay manager, NIP-19 decoders
