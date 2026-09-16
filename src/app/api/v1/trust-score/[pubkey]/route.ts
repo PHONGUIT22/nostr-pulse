@@ -1,8 +1,8 @@
 // src/app/api/v1/trust-score/[pubkey]/route.ts
 import { NextResponse } from "next/server";
-import { calculateTrustScore } from "@/lib/trust-score";
 import { normalizePubkey, encodeNpub, getWebOfTrustDistance } from "@/lib/wot";
-import { accumulateZapTotals, getCreatorFromDb, getZapTotalsFromDb, recordZapEdge } from "@/lib/db";
+import { getCreatorFromDb, getZapTotalsFromDb } from "@/lib/db";
+import { calculateTrustScore } from "@/lib/trust-score";
 
 interface RouteContext {
   params: Promise<{ pubkey: string }>;

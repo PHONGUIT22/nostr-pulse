@@ -11,7 +11,7 @@ import {
 import {
   fetchEconomicStake,
   EconomicStakeResult,
-} from  "@/lib/economic-stake";
+} from "@/lib/economic-stake";
 
 export { fetchNostrProfile, DEFAULT_RELAYS };
 export type { NostrProfile, WebOfTrustDistanceResult, EconomicStakeResult };
@@ -94,8 +94,9 @@ export function calculateTrustScore(
     graphPoints = 45;
     graphDesc = `Hop 0: Core Root Anchor in Nostr Web-of-Trust (${resolvedWot.tier || "Core Protocol"}) • 45/45 pts`;
   } else if (resolvedWot.distance === 1) {
-    const scoreHop1 = Math.min(8.0, resolvedWot.rawScore);
-    graphPoints = Math.round((scoreHop1 / 8.0) * 45);
+    // rawScore is the accumulated sum of anchor weights (up to 40)
+    const scoreHop1 = Math.min(40, resolvedWot.rawScore);
+    graphPoints = Math.round((scoreHop1 / 40) * 45);
     const endorsers = resolvedWot.endorsers || [];
     const sample = endorsers.slice(0, 3).join(", ");
     const extra = endorsers.length > 3 ? ` +${endorsers.length - 3} more` : "";
@@ -129,9 +130,10 @@ export function calculateTrustScore(
   let economicDesc = "";
 
   if (economicStakeResult) {
-    const baseEndpoint = hasLud16 ? 20 : 0;
+    // 5 base points for active payment address + up to 25 pts from verified sats
+    const baseEndpoint = hasLud16 ? 5 : 0;
     const validSats = economicStakeResult.totalValidSats;
-    const satsScore = validSats > 0 ? Math.min(10, Math.round(Math.log10(validSats + 1) * 2.5)) : 0;
+    const satsScore = Math.min(25, Math.round(Math.log10(validSats + 1) * 5.0));
     economicPoints = Math.min(30, baseEndpoint + satsScore);
 
     const validCount = economicStakeResult.validZapsCount;
@@ -143,7 +145,7 @@ export function calculateTrustScore(
       if (validSats > 0) {
         economicDesc += ` • ${validSats.toLocaleString()} Sats from ${validCount} WoT sender${validCount > 1 ? "s" : ""} (+${satsScore} pts)`;
       } else {
-        economicDesc += " • Active Lightning payment endpoint verified (20/30 pts)";
+        economicDesc += " • No verified WoT incoming zaps yet (5/30 pts)";
       }
       if (filteredCount > 0) {
         economicDesc += ` (${filteredCount} Sybil zap${filteredCount > 1 ? "s" : ""} / ${filteredSats.toLocaleString()} Sats filtered)`;
@@ -152,16 +154,11 @@ export function calculateTrustScore(
       economicDesc = "No Lightning payment address configured (0/30 pts)";
     }
   } else {
+    // Synchronous fallback when live receipts are not queried
     economicPoints = hasLud16 ? 20 : 0;
     economicDesc = hasLud16
       ? `Active Lightning Payment Address (${profile.lud16}) configured for Zaps`
       : "No Lightning payment address linked (0/30 pts)";
-  }
-
-  // Anchor Hop 0 Guarantee: core founders always achieve 90+ points
-  if (resolvedWot.distance === 0) {
-    graphPoints = 45;
-    economicPoints = hasLud16 ? 25 : economicPoints;
   }
 
   rawScore += economicPoints;
