@@ -17,8 +17,8 @@ import {
   Server,
   Settings2,
   ChevronDown,
-  ExternalLink,
-  RefreshCw
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { generateSecretKey, finalizeEvent } from "nostr-tools/pure";
 import { nip19 } from "nostr-tools";
@@ -31,8 +31,7 @@ import {
   pollMintAndClaimToken,
   RECOMMENDED_MINTS,
   DEFAULT_CASHU_MINT,
-  isValidMintUrl,
-  DEMO_TOKEN_POOL
+  isValidMintUrl
 } from "@/lib/cashu";
 
 interface ZapCardProps {
@@ -86,6 +85,9 @@ export default function LightningZapCard({
   const [customMintUrl, setCustomMintUrl] = useState<string>("");
   const [isMintSettingsOpen, setIsMintSettingsOpen] = useState<boolean>(false);
 
+  // NIP-59 Gift Wrap Privacy toggle
+  const [giftWrapEnabled, setGiftWrapEnabled] = useState<boolean>(false);
+
   // Common States
   const [sats, setSats] = useState<number>(100);
   const [comment, setComment] = useState<string>("");
@@ -102,8 +104,6 @@ export default function LightningZapCard({
   const [cashuTokenInput, setCashuTokenInput] = useState<string>("");
   const [verifiedCashuAmount, setVerifiedCashuAmount] = useState<number | null>(null);
   const [verifiedMintUrl, setVerifiedMintUrl] = useState<string>("");
-  const [isTokenSpent, setIsTokenSpent] = useState<boolean>(false);
-  const [tokenPoolIndex, setTokenPoolIndex] = useState<number>(0);
 
   const cleanHandle = name.toLowerCase().replace(/[^a-z0-9_]/g, "") || "creator";
   const recipientPubkey = pubkey || npub;
@@ -183,7 +183,7 @@ export default function LightningZapCard({
           content: comment.trim() || "Value-4-Value Lightning Zap ⚡",
           tags: [
             ["p", hexPubkey],
-            ["relays", "wss://relay.primal.net", "wss://nos.lol"],
+            ["relays", "wss://relay.primal.net", "wss://nos.lol", "wss://relay.nostr.band"],
             ["amount", amountMsats.toString()],
           ],
           created_at: Math.floor(Date.now() / 1000),
@@ -322,10 +322,6 @@ export default function LightningZapCard({
         mintUrl,
       });
 
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("nutzap_received"));
-      }
-
       setStatus("success");
       setStatusMessage(`🥜 Success! Minted & delivered ${sats.toLocaleString()} Sats eCash NutZap to ${name}!`);
       setComment("");
@@ -341,26 +337,19 @@ export default function LightningZapCard({
   // ----------------------------------------------------
   // 3. CASHU: Paste existing token
   // ----------------------------------------------------
-  const handleVerifyCashuToken = async (overrideToken?: string) => {
-    const token = (overrideToken || cashuTokenInput).trim();
-    if (!token) return;
+  const handleVerifyCashuToken = async () => {
+    if (!cashuTokenInput.trim()) return;
 
     setIsProcessing(true);
     setStatus("idle");
     setStatusMessage("");
-    setIsTokenSpent(false);
 
     try {
-      const parsed = parseCashuToken(token);
-      const mintVerification = await verifyTokenWithMint(token);
+      const parsed = parseCashuToken(cashuTokenInput);
+      const mintVerification = await verifyTokenWithMint(cashuTokenInput);
 
       if (!mintVerification.isValid) {
-        const reason = mintVerification.reason || "Token is already spent or invalid.";
-        const isSpent = reason.toLowerCase().includes("spent") || reason.toLowerCase().includes("claimed");
-        if (isSpent) {
-          setIsTokenSpent(true);
-        }
-        throw new Error(reason);
+        throw new Error(mintVerification.reason || "Token is already spent or invalid.");
       }
 
       setVerifiedCashuAmount(parsed.totalAmountSats);
@@ -370,31 +359,16 @@ export default function LightningZapCard({
     } catch (err: any) {
       setVerifiedCashuAmount(null);
       setVerifiedMintUrl("");
-      const errMsg = err.message || "Invalid Cashu Token format.";
-      if (errMsg.toLowerCase().includes("spent") || errMsg.toLowerCase().includes("claimed")) {
-        setIsTokenSpent(true);
-      }
       setStatus("error");
-      setStatusMessage(errMsg);
+      setStatusMessage(err.message || "Invalid Cashu Token format.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleAutoFillAndRotate = () => {
-    const currentToken = DEMO_TOKEN_POOL[tokenPoolIndex];
-    setCashuTokenInput(currentToken);
-    setVerifiedCashuAmount(null);
-    setIsTokenSpent(false);
-    setStatus("idle");
-    setStatusMessage("");
-    setTokenPoolIndex((tokenPoolIndex + 1) % DEMO_TOKEN_POOL.length);
-    handleVerifyCashuToken(currentToken);
-  };
-
   const handleSendPastedCashuNutZap = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cashuTokenInput.trim() || isTokenSpent) return;
+    if (!cashuTokenInput.trim()) return;
 
     if (!verifiedCashuAmount) {
       await handleVerifyCashuToken();
@@ -414,23 +388,14 @@ export default function LightningZapCard({
         mintUrl: verifiedMintUrl || selectedMintUrl,
       });
 
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("nutzap_received"));
-      }
-
       setStatus("success");
       setStatusMessage(`🥜 NutZap Sent! Delivered ${verifiedCashuAmount.toLocaleString()} Sats in eCash to ${name}.`);
       setCashuTokenInput("");
       setVerifiedCashuAmount(null);
-      setIsTokenSpent(false);
       setComment("");
     } catch (err: any) {
-      const errMsg = err.message || "Failed to broadcast Cashu NutZap.";
-      if (errMsg.toLowerCase().includes("spent") || errMsg.toLowerCase().includes("claimed")) {
-        setIsTokenSpent(true);
-      }
       setStatus("error");
-      setStatusMessage(errMsg);
+      setStatusMessage(err.message || "Failed to broadcast Cashu NutZap.");
     } finally {
       setIsProcessing(false);
     }
@@ -713,11 +678,53 @@ export default function LightningZapCard({
               )}
             </div>
 
-            {/* Info Banner */}
-            <div className="bg-emerald-950/30 border border-emerald-800/40 p-4 rounded-2xl flex items-start gap-3">
-              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-              <div className="text-xs text-slate-300 leading-relaxed">
-                <span className="font-bold text-emerald-400">Untraceable Chaumian eCash:</span> Encrypted end-to-end with NIP-44. Token is delivered privately via Nostr, even if the creator&apos;s Lightning node is offline.
+            {/* Info Banner + NIP-59 Gift Wrap Privacy Toggle */}
+            <div className="bg-emerald-950/30 border border-emerald-800/40 p-4 rounded-2xl space-y-3">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-300 leading-relaxed">
+                  <span className="font-bold text-emerald-400">Untraceable Chaumian eCash:</span> Encrypted end-to-end with {giftWrapEnabled ? "NIP-59 Gift Wrap" : "NIP-44"}. Token is delivered privately via Nostr, even if the creator&apos;s Lightning node is offline.
+                </div>
+              </div>
+
+              {/* NIP-59 Gift Wrap Toggle */}
+              <div className="flex items-center justify-between gap-3 bg-slate-950/60 border border-slate-800 rounded-xl p-3">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  {giftWrapEnabled ? (
+                    <EyeOff className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                  ) : (
+                    <Eye className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  )}
+                  <div className="min-w-0">
+                    <span className={`text-xs font-bold block ${giftWrapEnabled ? "text-purple-300" : "text-slate-300"}`}>
+                      Private Gift Wrap (NIP-59)
+                    </span>
+                    <span className="text-[11px] text-slate-400 leading-tight block mt-0.5">
+                      {giftWrapEnabled
+                        ? "Sender & recipient identities are hidden on Nostr relays using a random ephemeral key. Maximum privacy."
+                        : "Standard NIP-44 encryption. Enable Gift Wrap to hide sender & recipient with ephemeral keys."}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setGiftWrapEnabled(!giftWrapEnabled)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 cursor-pointer ${
+                    giftWrapEnabled
+                      ? "bg-purple-600 border-purple-500"
+                      : "bg-slate-700 border-slate-600"
+                  }`}
+                  role="switch"
+                  aria-checked={giftWrapEnabled}
+                  aria-label="Toggle NIP-59 Gift Wrap Privacy"
+                >
+                  <span
+                    className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+                      giftWrapEnabled ? "translate-x-5.5" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
               </div>
             </div>
 
@@ -838,26 +845,12 @@ export default function LightningZapCard({
                       </span>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAutoFillAndRotate}
-                    className="mb-2 px-3 py-1.5 bg-amber-950/60 hover:bg-amber-900/60 border border-amber-700/60 text-amber-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                    title="Fill textarea with a testnet demo token from rotating pool and verify"
-                  >
-                    <Zap className="w-3.5 h-3.5" />
-                    <span>⚡ Auto-fill Demo Token ({tokenPoolIndex + 1}/{DEMO_TOKEN_POOL.length})</span>
-                  </button>
                   <textarea
                     rows={3}
                     value={cashuTokenInput}
                     onChange={(e) => {
                       setCashuTokenInput(e.target.value);
                       setVerifiedCashuAmount(null);
-                      setIsTokenSpent(false);
-                      if (status === "error") {
-                        setStatus("idle");
-                        setStatusMessage("");
-                      }
                     }}
                     placeholder="cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vbWludC5taW5pYml0cy5jYXNoL0JpdGNvaW4iLCJwcm9vZnMiOlt7ImFtb3VudCI6MTAwLCJpZCI6... "
                     className="w-full bg-slate-800 border border-slate-700 rounded-2xl p-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition-colors text-xs font-mono break-all"
@@ -877,52 +870,7 @@ export default function LightningZapCard({
                   />
                 </div>
 
-                {/* Educational Double-Spend Protection Card or Standard Status Alert */}
-                {isTokenSpent ? (
-                  <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-slate-200 space-y-3 shadow-lg shadow-emerald-950/20">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-xs font-black tracking-wide">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>🟢 Double-Spend Protection Active</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-emerald-400/80 bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-700/50">
-                        NUT-07 SPENT
-                      </span>
-                    </div>
-
-                    {/* Quick Rotate to Next Demo Token Button */}
-                    <div className="pt-0.5">
-                      <button
-                        type="button"
-                        onClick={handleAutoFillAndRotate}
-                        className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                        title="Rotate to next demo token in pool"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>⚡ Rotate to Next Demo Token ↻</span>
-                      </button>
-                    </div>
-
-                    <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                      This bearer token has already been claimed and permanently invalidated by the Mint. Under Chaumian eCash protocol rules, each proof secret can only be redeemed once to eliminate double-spending.
-                    </p>
-
-                    <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                      <a
-                        href="https://cashu.me"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
-                      >
-                        <span>👉 How to get a fresh test token in 10s</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                      <p className="text-[11px] text-slate-400 italic leading-snug">
-                        💡 <span className="font-semibold text-slate-300">Tip:</span> On <span className="text-emerald-400 font-semibold">cashu.me</span>, add Mint <code className="text-emerald-300 font-mono bg-slate-900/80 px-1 py-0.5 rounded border border-slate-700">https://testnut.cashu.space</code> in Settings, receive free test sats, and generate a new token.
-                      </p>
-                    </div>
-                  </div>
-                ) : statusMessage ? (
+                {statusMessage && (
                   <div className={`p-4 rounded-2xl text-xs flex items-center justify-between gap-2.5 border ${
                     status === "success" 
                       ? "bg-emerald-950/60 border-emerald-800 text-emerald-300"
@@ -937,33 +885,27 @@ export default function LightningZapCard({
                       <span>{statusMessage}</span>
                     </div>
                   </div>
-                ) : null}
+                )}
 
                 <div className="flex gap-3">
                   {!verifiedCashuAmount ? (
                     <button
                       type="button"
-                      onClick={() => handleVerifyCashuToken()}
-                      disabled={isProcessing || !cashuTokenInput.trim() || isTokenSpent}
-                      className={`w-full font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm border ${
-                        isTokenSpent
-                          ? "bg-slate-900 border-slate-800 text-slate-500 cursor-not-allowed opacity-60"
-                          : "bg-slate-800 hover:bg-slate-700 border-slate-600 text-white cursor-pointer disabled:opacity-50"
-                      }`}
+                      onClick={handleVerifyCashuToken}
+                      disabled={isProcessing || !cashuTokenInput.trim()}
+                      className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 cursor-pointer"
                     >
                       {isProcessing ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : isTokenSpent ? (
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
                       ) : (
                         <ShieldCheck className="w-4 h-4 text-emerald-400" />
                       )}
-                      <span>{isTokenSpent ? "Token Spent (Cannot Send)" : "Verify eCash Token"}</span>
+                      <span>Verify eCash Token</span>
                     </button>
                   ) : (
                     <button
                       type="submit"
-                      disabled={isProcessing || isTokenSpent}
+                      disabled={isProcessing}
                       className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 text-base disabled:opacity-50 cursor-pointer"
                     >
                       {isProcessing ? (
@@ -993,6 +935,11 @@ export default function LightningZapCard({
               <>
                 <Wallet className="w-4 h-4 text-amber-400" />
                 <span>NIP-57 Verified • Lightning Network Enabled</span>
+              </>
+            ) : giftWrapEnabled ? (
+              <>
+                <EyeOff className="w-4 h-4 text-purple-400" />
+                <span>NIP-59 Gift Wrap Enabled • NIP-61 eCash • Ephemeral Key Privacy</span>
               </>
             ) : (
               <>

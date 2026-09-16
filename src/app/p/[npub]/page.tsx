@@ -8,6 +8,7 @@ import {
 } from "@/lib/nostr";
 import { verifyNip05 } from "@/lib/nip05";
 import { calculateTrustScore, calculateTrustScoreAsync } from "@/lib/trust-score";
+import { discoverAndCrawlCreator } from "@/lib/discovery";
 import LightningZapCard from "@/components/detail/LightningZapCard";
 import TrustScoreCard from "@/components/detail/TrustScoreCard";
 import TrustScoreBadge from "@/components/detail/TrustScoreBadge";
@@ -16,7 +17,6 @@ import LiveZapFeed from "@/components/detail/LiveZapFeed";
 import Breadcrumb from "@/components/detail/Breadcrumb";
 import UserAvatar from "@/components/ui/UserAvatar";
 import CreatorNotesFeed from "@/components/detail/CreatorNotesFeed";
-import NutZapInbox from "@/components/detail/NutZapInbox";
 import { 
   Zap, 
   ShieldCheck, 
@@ -61,6 +61,13 @@ export default async function CreatorProfilePage({ params }: PageProps) {
   const rawNpub = decodeURIComponent(resolvedParams.npub);
   const { hex: hexPubkey, npub: encodedNpub } = normalizeToHex(rawNpub);
 
+  // Trigger background graph crawl & discovery into SQLite database
+  if (hexPubkey && /^[0-9a-fA-F]{64}$/.test(hexPubkey)) {
+    discoverAndCrawlCreator(hexPubkey).catch((err) =>
+      console.debug("[Profile] Background crawl discovery error:", err)
+    );
+  }
+
   // Fetch profile and latest 4 notes (Kind 1) from relay pool in parallel
   const [rawProfile, recentNotes] = await Promise.all([
     fetchNostrProfile(rawNpub),
@@ -87,7 +94,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
   // 1. Cryptographic NIP-05 DNS verification
   const nip05Result = await verifyNip05(profile.nip05, profile.pubkey);
 
-  // 2. Calculate Trust Score from verified data with multi-hop WoT and Economic Stake
+  // 2. Calculate Trust Score with multi-hop WoT resolution
   const trustData = await calculateTrustScoreAsync(profile, nip05Result);
   
   return (
@@ -163,9 +170,9 @@ export default async function CreatorProfilePage({ params }: PageProps) {
                   <p className="text-slate-500 font-medium text-sm mt-0.5">{handle}</p>
                 )}
                 
-                <div suppressHydrationWarning className="flex items-center gap-2 mt-2 font-mono text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60 w-fit">
+                <div className="flex items-center gap-2 mt-2 font-mono text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60 w-fit">
                   <Key className="w-3.5 h-3.5 text-slate-400" />
-                  <span suppressHydrationWarning>{npubShort}</span>
+                  <span>{npubShort}</span>
                 </div>
               </div>
             </div>
@@ -175,15 +182,15 @@ export default async function CreatorProfilePage({ params }: PageProps) {
               <TrustScoreBadge score={trustData.score} tier={trustData.tier} />
               
               {lud16 && (
-                <div suppressHydrationWarning className="bg-amber-50 border border-amber-200/80 p-4 rounded-3xl shrink-0 flex items-center gap-3 w-full sm:w-auto h-full">
-                  <div suppressHydrationWarning className="w-10 h-10 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-xs">
+                <div className="bg-amber-50 border border-amber-200/80 p-4 rounded-3xl shrink-0 flex items-center gap-3 w-full sm:w-auto h-full">
+                  <div className="w-10 h-10 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-xs">
                     <Zap className="w-5 h-5 fill-white" />
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
                       Lightning Address (LNURL)
                     </span>
-                    <span suppressHydrationWarning className="font-bold text-slate-900 text-xs font-mono block truncate max-w-[160px]">
+                    <span className="font-bold text-slate-900 text-xs font-mono block truncate max-w-[160px]">
                       {lud16}
                     </span>
                   </div>
@@ -235,14 +242,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
               pubkey={profile.pubkey}
             />
 
-            {/* 3. Incoming NutZaps Inbox (NIP-61 Receiver & Claim Flow) */}
-            <NutZapInbox
-              recipientPubkey={profile.pubkey}
-              recipientNpub={encodedNpub}
-              recipientName={displayName}
-            />
-
-            {/* 4. Latest Nostr notes feed (Kind 1) */}
+            {/* 3. Latest Nostr notes feed (Kind 1) */}
             <CreatorNotesFeed 
               notes={recentNotes} 
               creatorName={displayName} 
@@ -263,10 +263,10 @@ export default async function CreatorProfilePage({ params }: PageProps) {
               </div>
               <h4 className="font-bold text-slate-900 text-sm mb-3">Nostr Public Identity</h4>
               
-              <div suppressHydrationWarning className="space-y-3 text-xs">
+              <div className="space-y-3 text-xs">
                 <div>
                   <span className="text-slate-400 block font-medium">Bech32 Encoded (npub):</span>
-                  <div suppressHydrationWarning className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-mono text-[11px] text-slate-600 break-all mt-1 select-all">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-mono text-[11px] text-slate-600 break-all mt-1 select-all">
                     {encodedNpub}
                   </div>
                 </div>
@@ -274,7 +274,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
                 {profile.pubkey && (
                   <div>
                     <span className="text-slate-400 block font-medium">Hex Pubkey:</span>
-                    <div suppressHydrationWarning className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-mono text-[11px] text-slate-600 break-all mt-1 select-all">
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-mono text-[11px] text-slate-600 break-all mt-1 select-all">
                       {profile.pubkey}
                     </div>
                   </div>

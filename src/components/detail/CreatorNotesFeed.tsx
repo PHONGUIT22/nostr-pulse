@@ -74,7 +74,7 @@ export default function CreatorNotesFeed({
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-700/40 text-xs text-slate-400">
                 <div className="flex items-center gap-1.5 text-slate-400">
                   <Clock className="w-3.5 h-3.5 text-slate-500" />
-                  <span suppressHydrationWarning>{formatTimeAgo(note.created_at)}</span>
+                  <span>{formatTimeAgo(note.created_at)}</span>
                 </div>
 
                 <a
