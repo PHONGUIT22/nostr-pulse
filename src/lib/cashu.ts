@@ -1,4 +1,5 @@
 // src/lib/cashu.ts
+/** Cashu v4 CBOR & NutZap Protocol Client */
 import { getEncodedToken, Wallet } from "@cashu/cashu-ts";
 import { finalizeEvent, generateSecretKey } from "nostr-tools/pure";
 import { SimplePool } from "nostr-tools/pool";
