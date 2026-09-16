@@ -9,7 +9,7 @@
     "picture": "https://cdn.jb55.com/img/red-me.jpg",
     "about": "I made damus, npubs, and zaps ⚡️ \nIndependent bitcoin core and lightning dev.\nOwner of the oldest still running lightning node.\n💍nostr:npub1l0gxx3qq9ex5lpurnfmqhfdrx27xfgj24sx6kqmk3r8a5cne63zspx78fx",
     "nip05": "_@jb55.com",
-    "lud16": "27150db61d655411@coinos.io"
+    "lud16": "jb55@sendsats.lol"
   },
   {
     "name": "jack",
@@ -88,24 +88,23 @@
     "handle": "kukks",
     "npub": "npub1y24gz5gwucl79vtv4ctwpysl0r5m4xyzu2rgulnr44ks3t5mt92q4nz2ad",
     "pubkey": "22aa81510ee63fe2b16cae16e0921f78e9ba9882e2868e7e63ad6d08ae9b5954",
-    "score": 88,
-    "zapsReceived": "0 Sats",
+    "score": 96,
+    "zapsReceived": "Active Node",
     "picture": "https://m.primal.net/KxaQ.jpg",
     "about": "Building in the shadows for a better future.",
     "nip05": "kukks@kukks.org",
-    "lud16": ""
+    "lud16": "kukks@kukks.org"
   },
   {
-    "name": "anon_bot",
-    "handle": "anon_bot",
+    "name": "Change this if you want",
+    "handle": "Change this if you want",
     "npub": "npub1z4m7gkva6yxgvdyclc7zp0vz4ta0s2d9jh8g83w03tp5vdf3kzdsxana6p",
     "pubkey": "1577e4599dd10c863498fe3c20bd82aafaf829a595ce83c5cf8ac3463531b09b",
-    "score": 42,
-    "zapsReceived": "0 Sats",
-    "picture": "https://api.dicebear.com/7.x/bottts/svg?seed=anon_bot_sybil_42",
-    "about": "Automated Sybil bot clone instance. Synthetic profile attempting to game metadata metrics without verified DNS identity or core network proximity.",
+    "score": 75,
+    "zapsReceived": "Active Node",
+    "picture": "https://api.dicebear.com/7.x/bottts/svg?seed=npub1z4m7gkva6yxgvdyclc7zp0vz4ta0s2d9jh8g83w03tp5vdf3kzdsxana6p",
+    "about": "Active Nostr builder and creator.",
     "nip05": "",
-    "website": "https://sybil-cluster-farm.xyz",
     "lud16": "tardyketchup36@walletofsatoshi.com"
   },
   {
@@ -116,9 +115,9 @@
     "score": 88,
     "zapsReceived": "0 Sats",
     "picture": "https://fiatjaf.com/static/favicon.jpg",
-    "about": "Creator of Nostr protocol (~)",
+    "about": "~",
     "nip05": "_@fiatjaf.com",
-    "lud16": "fiatjaf@coinos.io"
+    "lud16": ""
   },
   {
     "name": "Derek Ross",
@@ -127,7 +126,7 @@
     "pubkey": "3f770d65d3a764a9c5cb503ae123e62ec7598ad035d836e2a810f3877a745b24",
     "score": 96,
     "zapsReceived": "Active Node",
-    "picture": "https://blossom.ditto.pub/97f68a8225af2ed04d36f934a10c265a0cf8b1e9985506973f4a2fdf1e205f0c.jpeg",
+    "picture": "https://blossom.primal.net/3f927e368163cac6235966ce0507324e143270d95c9569e6d65edf070e0da409.jpg",
     "about": "The purple pill helps the orange pill go down. \n\nDeveloper Relations at Soapbox.\n\n🪺 NostrNests.com\n🎙️ YakBak.app \n🖼️ Zappix.app\n🗓️ Plektos.app\n🎶 ZapTrax.app\n📈 Zaplytics.app\n🎧 Podstr.org",
     "nip05": "derekross@grownostr.org",
     "lud16": "derekross@strike.me"

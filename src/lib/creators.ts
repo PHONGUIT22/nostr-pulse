@@ -1,6 +1,5 @@
 // src/lib/creators.ts
 import { formatSats } from "@/lib/utils";
-import { getNetworkMode } from "@/lib/network-mode";
 import importedCreators from "./creators.json";
 import { nip19 } from "nostr-tools";
 
@@ -15,11 +14,10 @@ export interface Creator {
   nip05?: string;
   about?: string;
   lud16?: string;
-  website?: string;
 }
 
 // 1. Safe helper to derive Hex Pubkey from npub
-function extractHexPubkey(creator: Creator): string {
+export function extractHexPubkey(creator: Creator): string {
   if (creator.pubkey && /^[0-9a-fA-F]{64}$/.test(creator.pubkey)) {
     return creator.pubkey.toLowerCase();
   }
@@ -32,39 +30,37 @@ function extractHexPubkey(creator: Creator): string {
   return "";
 }
 
-// 2. Fetch real stats (Kind 10000105) from Primal API
-async function fetchPrimalUserStats(hexPubkey: string): Promise<{ satsZapped: number; zapCount: number } | null> {
+/**
+ * Retrieves creator zap stats directly from the local SQLite database (zap_totals & trust_edges).
+ * Completely replaces external HTTP fetch to primal.net/api.
+ */
+export async function getCreatorZapStats(hexPubkey: string): Promise<{ satsZapped: number; zapCount: number } | null> {
   if (!hexPubkey) return null;
 
-  try {
-    const res = await fetch("https://primal.net/api", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(["user_profile", { pubkey: hexPubkey }]),
-      next: { revalidate: 3600 }, // Cache 1 hour on CDN
-      signal: AbortSignal.timeout(2000), // 2s timeout to prevent lag
-    });
-
-    if (!res.ok) return null;
-    const events = await res.json();
-
-    if (Array.isArray(events)) {
-      // Find kind 10000105 event containing Primal metrics
-      const statsEvent = events.find((e: any) => e.kind === 10000105);
-      if (statsEvent && statsEvent.content) {
-        const stats = JSON.parse(statsEvent.content);
+  if (typeof window === "undefined") {
+    try {
+      const { initDatabase, getZapTotalsFromDb, getTrustEdgesFromDb } = await import("@/lib/db");
+      await initDatabase();
+      const zapTotal = await getZapTotalsFromDb(hexPubkey);
+      if (zapTotal) {
+        const zapEdges = await getTrustEdgesFromDb(hexPubkey, "zap");
         return {
-          satsZapped: Number(stats.satszapped || 0),
-          zapCount: Number(stats.total_zap_count || 0),
+          satsZapped: zapTotal.total_sats,
+          zapCount: zapEdges.length,
         };
       }
+    } catch (err) {
+      console.debug("[Creators] Failed to read zap totals from DB:", err);
     }
-  } catch {}
+  }
 
   return null;
 }
 
-// Base featured creators array
+// Backward compatibility alias (now backed by DB, no primal.net/api calls)
+export const fetchPrimalUserStats = getCreatorZapStats;
+
+// Base seed creators array
 export const FEATURED_CREATORS: Creator[] = (importedCreators as Creator[]).map((c, index) => ({
   ...c,
   name: c.name?.startsWith("Nostr Creator #") ? `@${c.handle}` : c.name || `@${c.handle}`,
@@ -76,20 +72,36 @@ export const FEATURED_CREATORS: Creator[] = (importedCreators as Creator[]).map(
 
 export const CREATORS = FEATURED_CREATORS;
 
-// 3. Attach real zaps to top creators leaderboard
+/**
+ * Retrieves dynamic top creators backed by the local SQLite database.
+ * If running on server, pulls live records from DB; falls back to seed list if empty.
+ */
 export async function getLiveTopCreators(limit = 10): Promise<Creator[]> {
+  if (typeof window === "undefined") {
+    try {
+      const { initDatabase, getTopCreatorsFromDb } = await import("@/lib/db");
+      await initDatabase();
+      const dbCreators = await getTopCreatorsFromDb(limit);
+
+      if (dbCreators && dbCreators.length > 0) {
+        return dbCreators;
+      }
+    } catch (err) {
+      console.warn("[Creators] Could not query database creators, falling back to seed:", err);
+    }
+  }
+
   const baseList = FEATURED_CREATORS.slice(0, limit);
 
-  // Fetch stats for 10 creators in parallel
+  // Fetch stats from local DB for fallback list in parallel
   const resolved = await Promise.all(
     baseList.map(async (creator) => {
       const hex = extractHexPubkey(creator);
       let realZapsStr = creator.zapsReceived;
 
-      if (hex && getNetworkMode() !== "p2p") {
-        const stats = await fetchPrimalUserStats(hex);
+      if (hex) {
+        const stats = await getCreatorZapStats(hex);
         if (stats && stats.satsZapped > 0) {
-          // Format integer sats to compact notation: 4500000 -> 4.5M Sats
           realZapsStr = formatSats(stats.satsZapped);
         }
       }
@@ -102,4 +114,23 @@ export async function getLiveTopCreators(limit = 10): Promise<Creator[]> {
   );
 
   return resolved;
+}
+
+/**
+ * Retrieves all creators from database or seed fallback.
+ */
+export async function getAllCreators(limit = 100): Promise<Creator[]> {
+  if (typeof window === "undefined") {
+    try {
+      const { initDatabase, getAllCreatorsFromDb } = await import("@/lib/db");
+      await initDatabase();
+      const dbCreators = await getAllCreatorsFromDb(limit);
+      if (dbCreators && dbCreators.length > 0) {
+        return dbCreators;
+      }
+    } catch (err) {
+      console.warn("[Creators] Could not query database for all creators:", err);
+    }
+  }
+  return FEATURED_CREATORS.slice(0, limit);
 }
