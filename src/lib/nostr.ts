@@ -2,13 +2,36 @@
 import { nip19 } from "nostr-tools";
 import { SimplePool } from "nostr-tools/pool";
 import { FEATURED_CREATORS } from "@/lib/creators";
-import { getNetworkMode } from "@/lib/network-mode";
 
 // Top public Nostr relays for high-availability fallback
 export const DEFAULT_RELAYS = [
   "wss://relay.primal.net",
   "wss://nos.lol"
 ];
+
+let sharedNostrPool: SimplePool | null = null;
+export function getNostrPool(): SimplePool {
+  if (!sharedNostrPool) {
+    const pool = new SimplePool();
+    const origEnsureRelay = pool.ensureRelay.bind(pool);
+    pool.ensureRelay = function (url: string, params?: any) {
+      return origEnsureRelay(url, params).catch(() => {
+        // Return dummy relay to prevent unhandled rejection in subscribeMany / querySync
+        return {
+          url,
+          connected: false,
+          subscribe: () => ({ close: () => {}, id: "dummy" }),
+          publish: () => Promise.resolve(""),
+          close: () => {},
+        } as any;
+      });
+    };
+    sharedNostrPool = pool;
+  }
+  return sharedNostrPool;
+}
+
+const profileMemoryCache = new Map<string, Promise<NostrProfile | null>>();
 
 export interface NostrProfile {
   pubkey: string;
@@ -45,19 +68,32 @@ export function normalizeRelayUrl(url: string): string {
   return clean;
 }
 
+const DISALLOWED_RELAYS = new Set([
+  "wss://relay.damus.io",
+  "wss://nostr.wine",
+  "wss://relay.snort.social",
+  "wss://eden.nostr.land",
+]);
+
 /**
- * Deduplicates and sanitizes relay list
+ * Deduplicates and sanitizes relay list, filtering out known problematic relays
  */
 export function mergeRelays(primary: string[] = [], fallback: string[] = DEFAULT_RELAYS): string[] {
   const set = new Set<string>();
   [...primary, ...fallback].forEach((r) => {
     if (r && typeof r === "string") {
       try {
-        set.add(normalizeRelayUrl(r));
-      } catch {}
+        const clean = normalizeRelayUrl(r);
+        if (!DISALLOWED_RELAYS.has(clean)) {
+          set.add(clean);
+        }
+      } catch (err) {
+        console.debug("[Nostr] Failed to parse/normalize relay URL:", r, err);
+      }
     }
   });
-  return Array.from(set);
+  const res = Array.from(set);
+  return res.length > 0 ? res : DEFAULT_RELAYS;
 }
 
 /**
@@ -68,12 +104,12 @@ export function bytesToHex(bytes: Uint8Array | number[]): string {
 }
 
 /**
- * 1. Safe conversion between npub, nprofile, and 64-char Hex Pubkey
+ * Normalizes user input (npub, nprofile, or hex) into a canonical 64-char hex public key and npub.
  */
 export function normalizeToHex(input: string): { hex: string; npub: string } {
   const clean = input.trim();
 
-  // 1.1 Decode if npub1...
+  // Decode npub identifier
   if (clean.startsWith("npub1")) {
     try {
       const decoded = nip19.decode(clean);
@@ -83,10 +119,12 @@ export function normalizeToHex(input: string): { hex: string; npub: string } {
           : bytesToHex(decoded.data as any);
         return { hex: hex.toLowerCase(), npub: clean };
       }
-    } catch {}
+    } catch (err) {
+      console.debug("[Nostr] Failed to decode npub identifier:", clean, err);
+    }
   }
 
-  // 1.2 Support nprofile1...
+  // Decode NIP-19 nprofile identifier
   if (clean.startsWith("nprofile1")) {
     try {
       const decoded = nip19.decode(clean);
@@ -94,20 +132,24 @@ export function normalizeToHex(input: string): { hex: string; npub: string } {
         const hex = decoded.data.pubkey.toLowerCase();
         return { hex, npub: nip19.npubEncode(hex) };
       }
-    } catch {}
+    } catch (err) {
+      console.debug("[Nostr] Failed to decode nprofile identifier:", clean, err);
+    }
   }
 
-  // 1.3 If valid 64-character hex string
+  // Validate standard 64-character hex pubkey
   if (/^[0-9a-fA-F]{64}$/.test(clean)) {
     try {
       return {
         hex: clean.toLowerCase(),
         npub: nip19.npubEncode(clean.toLowerCase()),
       };
-    } catch {}
+    } catch (err) {
+      console.debug("[Nostr] Failed to encode hex to npub:", clean, err);
+    }
   }
 
-  // 1.4 Match with featured creator list (Handle / NPUB)
+  // Lookup in featured creator registry
   const match = FEATURED_CREATORS.find(
     (c) =>
       c.npub === clean ||
@@ -122,29 +164,8 @@ export function normalizeToHex(input: string): { hex: string; npub: string } {
   return { hex: clean, npub: clean };
 }
 
-let sharedNostrPool: SimplePool | null = null;
-export function getNostrPool(): SimplePool {
-  if (!sharedNostrPool) {
-    const pool = new SimplePool();
-    const origEnsureRelay = pool.ensureRelay.bind(pool);
-    pool.ensureRelay = function (url: string, params?: any) {
-      return origEnsureRelay(url, params).catch(() => {
-        return {
-          url,
-          connected: false,
-          subscribe: () => ({ close: () => {}, id: "dummy" }),
-          publish: () => Promise.resolve(""),
-          close: () => {},
-        } as any;
-      });
-    };
-    sharedNostrPool = pool;
-  }
-  return sharedNostrPool;
-}
-
 /**
- * 2. Fetches user's personal relay list (NIP-65 Kind 10002)
+ * Fetches a user's NIP-65 relay list metadata (Kind 10002).
  */
 export async function fetchUserRelays(pubkeyOrNpub: string): Promise<string[]> {
   const { hex: hexPubkey } = normalizeToHex(pubkeyOrNpub);
@@ -159,7 +180,10 @@ export async function fetchUserRelays(pubkeyOrNpub: string): Promise<string[]> {
       kinds: [10002],
       authors: [hexPubkey],
       limit: 1,
-    }).catch(() => []);
+    }).catch((err) => {
+      console.debug("[Nostr] querySync error in fetchUserRelays:", err);
+      return [];
+    });
 
     const events = await Promise.race([queryPromise, timeoutPromise]);
 
@@ -178,16 +202,15 @@ export async function fetchUserRelays(pubkeyOrNpub: string): Promise<string[]> {
       }
     }
   } catch (err) {
-    console.warn("Failed to fetch NIP-65 relay list:", err);
+    console.debug("[Nostr] Failed to fetch NIP-65 relay list:", err);
   }
 
   return DEFAULT_RELAYS;
 }
 
-const profileMemoryCache = new Map<string, Promise<NostrProfile | null>>();
-
 /**
- * 3. Fetches profile directly from Nostr WebSocket relay pool (P2P)
+ * Fetches user profile metadata (Kind 0) from connected relays, with Primal API and local fallback.
+ * Employs an in-memory promise cache to deduplicate concurrent requests.
  */
 export async function fetchNostrProfile(npubOrHex: string, customRelays?: string[]): Promise<NostrProfile | null> {
   const { hex: hexPubkey, npub: encodedNpub } = normalizeToHex(npubOrHex);
@@ -198,43 +221,25 @@ export async function fetchNostrProfile(npubOrHex: string, customRelays?: string
   }
 
   const fetchPromise = (async (): Promise<NostrProfile | null> => {
-    // Fast-path local demo profile (anon_bot) for instant evaluation (< 50ms)
-    if (hexPubkey === "1577e4599dd10c863498fe3c20bd82aafaf829a595ce83c5cf8ac3463531b09b") {
-      const botMatch = FEATURED_CREATORS.find((c) => c.handle === "anon_bot");
-      if (botMatch) {
-        return {
-          pubkey: botMatch.pubkey || hexPubkey,
-          npub: botMatch.npub || encodedNpub,
-          name: botMatch.handle,
-          displayName: botMatch.name,
-          about: botMatch.about,
-          picture: botMatch.picture,
-          nip05: botMatch.nip05 || "",
-          website: botMatch.website,
-          lud16: botMatch.lud16,
-          created_at: Math.floor(Date.now() / 1000) - 86400 * 400,
-          relays_connected: 0,
-        };
-      }
-    }
-
     const targetRelays = mergeRelays(customRelays, DEFAULT_RELAYS);
     const pool = getNostrPool();
 
-    // --- Priority 1: Query all relays & get latest Kind 0 event ---
+    // Primary strategy: Query connected relays for latest Kind 0 metadata
     try {
       const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 2500));
 
-      // Query all Kind 0 events across connected relays
       const queryPromise = pool.querySync(targetRelays, {
         kinds: [0],
         authors: [hexPubkey],
-      }).catch(() => []);
+      }).catch((err) => {
+        console.debug("[Nostr] querySync error in fetchNostrProfile:", err);
+        return [];
+      });
 
       const events = await Promise.race([queryPromise, timeoutPromise]);
 
       if (Array.isArray(events) && events.length > 0) {
-        // Sort descending by created_at to always pick the newest record
+        // Pick the newest event by created_at timestamp
         const latestEvent = events.sort((a, b) => b.created_at - a.created_at)[0];
 
         if (latestEvent && latestEvent.content) {
@@ -255,54 +260,56 @@ export async function fetchNostrProfile(npubOrHex: string, customRelays?: string
               relays_connected: targetRelays.length,
             };
           } catch (parseErr) {
-            console.warn("Malformed JSON in kind:0 profile event:", parseErr);
+            console.debug("[Nostr] Malformed JSON in kind 0 profile event:", parseErr);
           }
         }
       }
     } catch (err) {
-      console.warn("Relay pool query timed out, trying fallback cache...");
+      console.debug("[Nostr] Relay pool query timed out, attempting fallback cache:", err);
     }
 
-    // --- Priority 2: Fallback from Primal API (skipped in P2P mode) ---
-    if (getNetworkMode() !== "p2p") {
-      try {
-        const resPrimal = await fetch("https://primal.net/api", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(["user_profile", { pubkey: hexPubkey }]),
-          cache: "no-store", // Force fresh data fetch, no caching
-          signal: AbortSignal.timeout(2000),
-        });
+    // Secondary strategy: Primal caching API fallback
+    try {
+      const resPrimal = await fetch("https://primal.net/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(["user_profile", { pubkey: hexPubkey }]),
+        cache: "no-store",
+        signal: AbortSignal.timeout(2000),
+      });
 
-        if (resPrimal.ok) {
-          const events = await resPrimal.json();
-          if (Array.isArray(events)) {
-            const kind0 = events.find((e: any) => e.kind === 0);
-            if (kind0 && kind0.content) {
-              try {
-                const profile = JSON.parse(kind0.content);
-                return {
-                  pubkey: hexPubkey,
-                  npub: encodedNpub,
-                  name: profile.name,
-                  displayName: profile.display_name || profile.displayName || profile.name,
-                  about: profile.about || profile.bio,
-                  picture: profile.picture || profile.image,
-                  banner: profile.banner,
-                  nip05: profile.nip05,
-                  lud16: profile.lud16 || profile.lud06,
-                  website: profile.website,
-                  created_at: kind0.created_at,
-                  relays_connected: targetRelays.length,
-                };
-              } catch {}
+      if (resPrimal.ok) {
+        const events = await resPrimal.json();
+        if (Array.isArray(events)) {
+          const kind0 = events.find((e: any) => e.kind === 0);
+          if (kind0 && kind0.content) {
+            try {
+              const profile = JSON.parse(kind0.content);
+              return {
+                pubkey: hexPubkey,
+                npub: encodedNpub,
+                name: profile.name,
+                displayName: profile.display_name || profile.displayName || profile.name,
+                about: profile.about || profile.bio,
+                picture: profile.picture || profile.image,
+                banner: profile.banner,
+                nip05: profile.nip05,
+                lud16: profile.lud16 || profile.lud06,
+                website: profile.website,
+                created_at: kind0.created_at,
+                relays_connected: targetRelays.length,
+              };
+            } catch (parseErr) {
+              console.debug("[Nostr] Malformed JSON in Primal profile event:", parseErr);
             }
           }
         }
-      } catch {}
+      }
+    } catch (primalErr) {
+      console.debug("[Nostr] Primal fallback query failed:", primalErr);
     }
 
-    // --- Priority 3: Fallback to local cache list ---
+    // Tertiary strategy: Embedded curated creators list fallback
     const matched = FEATURED_CREATORS.find(
       (c) => c.npub === encodedNpub || c.pubkey?.toLowerCase() === hexPubkey.toLowerCase()
     );
@@ -316,7 +323,6 @@ export async function fetchNostrProfile(npubOrHex: string, customRelays?: string
         about: matched.about || `Active Nostr builder and creator.`,
         picture: matched.picture,
         nip05: matched.nip05,
-        website: matched.website,
         lud16: matched.lud16,
         created_at: Math.floor(Date.now() / 1000) - 86400 * 400,
         relays_connected: targetRelays.length,
@@ -331,24 +337,11 @@ export async function fetchNostrProfile(npubOrHex: string, customRelays?: string
 }
 
 /**
- * 4. Fetches latest notes (Kind 1) from relays
+ * Fetches recent text notes (Kind 1) authored by the given pubkey.
  */
 export async function fetchRecentNotes(npubOrHex: string, limit: number = 5, customRelays?: string[]): Promise<NostrNote[]> {
   const { hex: hexPubkey } = normalizeToHex(npubOrHex);
   if (!hexPubkey || !/^[0-9a-fA-F]{64}$/.test(hexPubkey)) return [];
-
-  // Instant notes for anon_bot demo evaluation
-  if (hexPubkey === "1577e4599dd10c863498fe3c20bd82aafaf829a595ce83c5cf8ac3463531b09b") {
-    return [
-      {
-        id: "demo-sybil-note-1",
-        pubkey: hexPubkey,
-        content: "Automated test note generated by sybil bot cluster instance #42. Broadcasting synthetic event across public relays.",
-        created_at: Math.floor(Date.now() / 1000) - 1800,
-        tags: [["t", "bot"], ["t", "sybil"]],
-      }
-    ];
-  }
 
   const targetRelays = mergeRelays(customRelays, DEFAULT_RELAYS);
   const pool = getNostrPool();
@@ -360,7 +353,10 @@ export async function fetchRecentNotes(npubOrHex: string, limit: number = 5, cus
       kinds: [1],
       authors: [hexPubkey],
       limit: limit * 2,
-    }).catch(() => []);
+    }).catch((err) => {
+      console.debug("[Nostr] querySync error in fetchRecentNotes:", err);
+      return [];
+    });
 
     const events = await Promise.race([queryPromise, timeoutPromise]);
 
@@ -377,7 +373,7 @@ export async function fetchRecentNotes(npubOrHex: string, limit: number = 5, cus
         tags: e.tags,
       }));
   } catch (err) {
-    console.warn("Failed to fetch creator notes:", err);
+    console.debug("[Nostr] Failed to fetch creator notes:", err);
     return [];
   }
 }
