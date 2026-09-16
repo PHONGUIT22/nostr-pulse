@@ -4,7 +4,6 @@ import { SimplePool } from "nostr-tools/pool";
 import { ROOT_ANCHORS, isRootAnchor, getRootAnchor, getAnchorWeight } from "./anchors";
 import ring1Snapshot from "./ring1-cache.json";
 
-
 /**
  * Interface representing a node in the Ring-1 snapshot cache.
  */
@@ -174,7 +173,7 @@ export async function queryReverseFollowers(
 /**
  * Synchronously queries the Web-of-Trust graph distance:
  * - Hop 0: Target is a configured Root Anchor (Distance = 0, wotPoints = 25, Sybil Risk = Low)
- * - Hop 1: Target is directly followed by >= 1 Root Anchor (Distance = 1, wotPoints = max(1, round(Score_Hop1/8.0 * 25)))
+ * - Hop 1: Target is directly followed by >= 1 Root Anchor (Distance = 1, wotPoints = round(Score_Hop1/40 * 25))
  * - Hop > 1: Target is unverified in fast cache (Distance = 3, wotPoints = 0, Sybil Risk = High)
  *
  * @param targetPubkey - Target public key in either hex or npub format
@@ -229,8 +228,8 @@ export function getWebOfTrustDistance(targetPubkey: string): WebOfTrustDistanceR
   const ring1Entry = RING1_LOOKUP_MAP.get(hex);
   if (ring1Entry) {
     const rawScore = ring1Entry.score;
-    const scoreHop1 = Math.min(8.0, rawScore);
-    const wotPoints = Math.max(1, Math.round((scoreHop1 / 8.0) * 25));
+    const scoreHop1 = Math.min(40, rawScore);
+    const wotPoints = Math.round((scoreHop1 / 40) * 25);
     const count = ring1Entry.count;
 
     return {
@@ -269,7 +268,7 @@ export function getWebOfTrustDistance(targetPubkey: string): WebOfTrustDistanceR
 /**
  * Asynchronously resolves the full 4-tier Web-of-Trust graph distance:
  * - Hop 0: Root Seed Anchor (wotPoints = 25/25, Low Sybil Risk)
- * - Hop 1: Direct Trust from Anchors (wotPoints = max(1, round(Score_Hop1/8.0 * 25)))
+ * - Hop 1: Direct Trust from Anchors (wotPoints = round(Score_Hop1/40 * 25))
  * - Hop 2: Transitive Trust via >= 1 Ring-1 node (Score_Hop2 = min(15, count * 3), wotPoints = Score_Hop2)
  * - Hop 3: Isolated / Unknown (wotPoints = 0/25, High Sybil Risk)
  *
