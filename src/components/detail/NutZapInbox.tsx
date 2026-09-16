@@ -170,7 +170,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
 
     try {
       // Pick a demo token from the shared pool deterministically for this event
-      const poolIdx = Math.abs(event.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % DEMO_TOKEN_POOL.length;
+      const poolIdx = Math.abs(event.id.split("").reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0)) % DEMO_TOKEN_POOL.length;
       const demoToken = DEMO_TOKEN_POOL[poolIdx];
 
       let parsedAmount = event.amountSats || 21;
