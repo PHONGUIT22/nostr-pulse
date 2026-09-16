@@ -29,13 +29,9 @@ interface RelayNode {
 }
 
 const INITIAL_RELAYS: RelayNode[] = [
-  { url: "wss://relay.damus.io", name: "Damus Global", location: "US / Global", type: "Read & Write", ping: null, status: "checking" },
-  { url: "wss://nos.lol", name: "Nos Lol", location: "Germany", type: "High Throughput", ping: null, status: "checking" },
   { url: "wss://relay.primal.net", name: "Primal Fast Cache", location: "Global Anycast", type: "Media & Cache", ping: null, status: "checking" },
+  { url: "wss://nos.lol", name: "Nos Lol", location: "Germany", type: "High Throughput", ping: null, status: "checking" },
   { url: "wss://relay.nostr.band", name: "Nostr Band Indexer", location: "Global CDN", type: "Search & Stats", ping: null, status: "checking" },
-  { url: "wss://nostr.wine", name: "Nostr Wine", location: "Europe", type: "Anti-Spam Filtered", ping: null, status: "checking" },
-  { url: "wss://relay.snort.social", name: "Snort Social", location: "US East", type: "Web Client Sync", ping: null, status: "checking" },
-  { url: "wss://eden.nostr.land", name: "NostrLand Eden", location: "Singapore", type: "Asia-Pacific Hub", ping: null, status: "checking" },
   { url: "wss://purplerelay.com", name: "Purple Relay", location: "Global Cloud", type: "High Availability", ping: null, status: "checking" },
   { url: "wss://relay.plebstr.com", name: "Plebstr Mobile", location: "US West", type: "Mobile Optimized", ping: null, status: "checking" },
   { url: "wss://relay.current.fyi", name: "Current Lightning", location: "Global", type: "Lightning Ready", ping: null, status: "checking" },
