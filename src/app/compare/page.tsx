@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FEATURED_CREATORS, Creator } from "@/lib/creators";
@@ -20,7 +20,18 @@ import {
 
 export default function CompareHubPage() {
   const router = useRouter();
-  const creators = FEATURED_CREATORS;
+  const [creators, setCreators] = useState<Creator[]>(FEATURED_CREATORS);
+
+  useEffect(() => {
+    fetch("/api/creators?limit=100")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCreators(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Selected creators A & B (defaults to first two)
   const [selectedNpubA, setSelectedNpubA] = useState<string>(creators[0]?.npub || "");
@@ -60,11 +71,6 @@ export default function CompareHubPage() {
       c1: creators[4] || { name: "NVK", handle: "nvk", npub: "npub1qny3tkh0xuz24ldrzct50hn5fhqr5t0m8w27j2pn4nqvmmv030eqtz4040z" },
       c2: creators[5] || { name: "Lyn Alden", handle: "lynalden", npub: "npub1a2cww4kn9wqte4pw70vjdjzhctrnvkfdln9ecc5422kqaeayikrqqf2la6" },
       tag: "Hardware & Macro",
-    },
-    {
-      c1: creators.find((c) => c.handle === "fiatjaf") || { name: "fiatjaf", handle: "fiatjaf", npub: "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" },
-      c2: creators.find((c) => c.handle === "anon_bot") || { name: "anon_bot", handle: "anon_bot", npub: "npub1z4m7gkva6yxgvdyclc7zp0vz4ta0s2d9jh8g83w03tp5vdf3kzdsxana6p" },
-      tag: "Verified vs Sybil Bot",
     },
   ];
 

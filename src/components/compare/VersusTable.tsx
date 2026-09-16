@@ -9,10 +9,7 @@ import {
   XCircle, 
   FileText, 
   Activity, 
-  Award,
-  Radio,
-  Clock,
-  User
+  Award 
 } from "lucide-react";
 import { calculateTrustScore } from "@/lib/trust-score";
 import { NostrProfile } from "@/lib/nostr";
@@ -37,10 +34,6 @@ export default function VersusTable({ dataA, dataB }: Props) {
   const winnerName = trustA.score >= trustB.score ? nameA : nameB;
   const loserName = trustA.score >= trustB.score ? nameB : nameA;
 
-  // Helper to find breakdown item with multi-key fallback matching
-  const getBreakdownItem = (breakdown: typeof trustA.breakdown, keys: string[]) =>
-    breakdown.find((b) => keys.includes(b.category) || keys.includes(b.label));
-
   return (
     <div className="space-y-8">
       
@@ -60,7 +53,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
           )}
         </h2>
         <p className="text-slate-500 text-sm max-w-xl mx-auto">
-          Higher trust scores indicate verified NIP-05 DNS signatures, strong network proximity, active Lightning Zap addresses, account longevity, and complete profile metadata.
+          Higher trust scores indicate verified NIP-05 DNS signatures, active Lightning Zap addresses, and robust relay presence.
         </p>
       </div>
 
@@ -141,11 +134,11 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
           </div>
 
-          {/* 2. NIP-05 Verified Identifier (Pillar 1) */}
+          {/* 2. NIP-05 Verified Identifier */}
           <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
               <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0 hidden sm:inline" />
-              <span>NIP-05 DNS Verification</span>
+              <span>NIP-05 Verified</span>
             </div>
             <div>
               {dataA.nip05 ? (
@@ -173,43 +166,11 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
           </div>
 
-          {/* 3. Network Proximity (Pillar 2) */}
-          <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
-              <Radio className="w-4 h-4 text-indigo-600 shrink-0 hidden sm:inline" />
-              <span>Network Proximity</span>
-            </div>
-            <div>
-              {(() => {
-                const item = getBreakdownItem(trustA.breakdown, ["Graph Connectivity", "Core Network Proximity & Graph Signal", "Web-of-Trust (WoT)"]);
-                return item ? (
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                    item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
-                  }`}>
-                    {item.points}/{item.maxPoints} pts
-                  </span>
-                ) : <span className="text-xs text-slate-400">—</span>;
-              })()}
-            </div>
-            <div>
-              {(() => {
-                const item = getBreakdownItem(trustB.breakdown, ["Graph Connectivity", "Core Network Proximity & Graph Signal", "Web-of-Trust (WoT)"]);
-                return item ? (
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                    item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
-                  }`}>
-                    {item.points}/{item.maxPoints} pts
-                  </span>
-                ) : <span className="text-xs text-slate-400">—</span>;
-              })()}
-            </div>
-          </div>
-
-          {/* 4. Lightning Address (Pillar 3) */}
+          {/* 3. Lightning Address */}
           <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
               <Zap className="w-4 h-4 text-amber-500 shrink-0 hidden sm:inline" />
-              <span>Lightning V4V & eCash</span>
+              <span>Lightning Zaps</span>
             </div>
             <div>
               {dataA.lud16 || dataA.lud06 ? (
@@ -231,39 +192,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
           </div>
 
-          {/* 5. Account Longevity (Pillar 4) */}
-          <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
-              <Clock className="w-4 h-4 text-teal-600 shrink-0 hidden sm:inline" />
-              <span>Account Longevity</span>
-            </div>
-            <div>
-              {(() => {
-                const item = getBreakdownItem(trustA.breakdown, ["Network Longevity", "Account Longevity"]);
-                return item ? (
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                    item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
-                  }`}>
-                    {item.points}/{item.maxPoints} pts
-                  </span>
-                ) : <span className="text-xs text-slate-400">—</span>;
-              })()}
-            </div>
-            <div>
-              {(() => {
-                const item = getBreakdownItem(trustB.breakdown, ["Network Longevity", "Account Longevity"]);
-                return item ? (
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                    item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
-                  }`}>
-                    {item.points}/{item.maxPoints} pts
-                  </span>
-                ) : <span className="text-xs text-slate-400">—</span>;
-              })()}
-            </div>
-          </div>
-
-          {/* 6. Public Key */}
+          {/* 4. Public Key */}
           <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
               <Key className="w-4 h-4 text-slate-600 shrink-0 hidden sm:inline" />
@@ -277,39 +206,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
           </div>
 
-          {/* 7. Economic Stake / Entropy */}
-          <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
-              <User className="w-4 h-4 text-violet-600 shrink-0 hidden sm:inline" />
-              <span>Economic Stake / Entropy</span>
-            </div>
-            <div>
-              {(() => {
-                const item = getBreakdownItem(trustA.breakdown, ["Economic Stake", "Lightning V4V", "Profile Quality"]);
-                return item ? (
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                    item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
-                  }`}>
-                    {item.points}/{item.maxPoints} pts
-                  </span>
-                ) : <span className="text-xs text-slate-400">—</span>;
-              })()}
-            </div>
-            <div>
-              {(() => {
-                const item = getBreakdownItem(trustB.breakdown, ["Economic Stake", "Lightning V4V", "Profile Quality"]);
-                return item ? (
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                    item.passed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
-                  }`}>
-                    {item.points}/{item.maxPoints} pts
-                  </span>
-                ) : <span className="text-xs text-slate-400">—</span>;
-              })()}
-            </div>
-          </div>
-
-          {/* 8. Website */}
+          {/* 5. Website */}
           <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
               <Globe className="w-4 h-4 text-purple-600 shrink-0 hidden sm:inline" />
@@ -335,7 +232,7 @@ export default function VersusTable({ dataA, dataB }: Props) {
             </div>
           </div>
 
-          {/* 9. Bio Length */}
+          {/* 6. Bio Length */}
           <div className="grid grid-cols-3 p-4 sm:p-5 items-center text-center hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm text-left pl-2">
               <FileText className="w-4 h-4 text-slate-600 shrink-0 hidden sm:inline" />
