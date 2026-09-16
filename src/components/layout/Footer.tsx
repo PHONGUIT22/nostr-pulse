@@ -10,7 +10,7 @@ export default function Footer() {
           
           {/* Column 1: Brand info and overview */}
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white tracking-tight inline-block">
-          <div suppressHydrationWarning className="w-6 h-6 bg-purple-600 rounded-lg flex items-center justify-center text-white text-xs font-black">⚡</div>
+          <div className="w-6 h-6 bg-purple-600 rounded-lg flex items-center justify-center text-white text-xs font-black">⚡</div>
           <span>
             Nostr<span className="text-purple-400">Pulse</span>
           </span>
@@ -53,7 +53,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-          <p suppressHydrationWarning>© {new Date().getFullYear()} NostrPulse. Open Source & Value-4-Value.</p>
+          <p>© {new Date().getFullYear()}  NostrPulse. Open Source & Value-4-Value.</p>
           <p className="mt-2 sm:mt-0">Updated for 2026 Data Cycle</p>
         </div>
 
