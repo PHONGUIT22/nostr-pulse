@@ -108,15 +108,79 @@ export async function initDatabase(): Promise<void> {
       );
     `);
 
-    // 4. Create helpful indexes
+    // 4. Create agent_spending_records table (Spending Guardrails)
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS agent_spending_records (
+        id TEXT PRIMARY KEY,
+        amount_sats INTEGER NOT NULL,
+        rail TEXT NOT NULL,
+        recipient_pubkey TEXT,
+        event_id TEXT,
+        memo TEXT,
+        created_at INTEGER NOT NULL
+      );
+    `);
+
+    // 5. Create telemetry_events table (Developer Observability & Audit Trail)
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS telemetry_events (
+        id TEXT PRIMARY KEY,
+        event_type TEXT NOT NULL,
+        category TEXT NOT NULL,
+        status TEXT NOT NULL,
+        actor_pubkey TEXT,
+        target_pubkey TEXT,
+        amount_sats INTEGER DEFAULT 0,
+        latency_ms INTEGER DEFAULT 0,
+        metadata_json TEXT,
+        error TEXT,
+        created_at INTEGER NOT NULL
+      );
+    `);
+
+    // 6. Create agent_spending_log table (Feature 2 Spending Policy)
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS agent_spending_log (
+        id TEXT PRIMARY KEY,
+        timestamp INTEGER NOT NULL,
+        amount_sats INTEGER NOT NULL,
+        recipient TEXT,
+        rail TEXT,
+        status TEXT,
+        reason TEXT
+      );
+    `);
+
+    // 7. Create agent_telemetry table (Feature 3 Audit Trail)
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS agent_telemetry (
+        id TEXT PRIMARY KEY,
+        timestamp INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        amount_sats INTEGER DEFAULT 0
+      );
+    `);
+
+    // 8. Create helpful indexes
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_creators_npub ON creators(npub);`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_creators_score ON creators(trust_score DESC);`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_creators_synced ON creators(last_synced DESC);`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_trust_edges_source ON trust_edges(source_pubkey);`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_trust_edges_target ON trust_edges(target_pubkey);`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_zap_totals_sats ON zap_totals(total_sats DESC);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_spending_created ON agent_spending_records(created_at DESC);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_spending_recipient ON agent_spending_records(recipient_pubkey);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_telemetry_created ON telemetry_events(created_at DESC);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_telemetry_type ON telemetry_events(event_type);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_telemetry_category ON telemetry_events(category);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_telemetry_status ON telemetry_events(status);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_spending_log_timestamp ON agent_spending_log(timestamp DESC);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_spending_log_recipient ON agent_spending_log(recipient);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_agent_telemetry_timestamp ON agent_telemetry(timestamp DESC);`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_agent_telemetry_type ON agent_telemetry(type);`);
 
-    // 5. Seed initial 26 creators if empty
+    // 9. Seed initial 26 creators if empty
     const countRes = await db.execute("SELECT COUNT(*) as count FROM creators");
     const count = Number(countRes.rows[0]?.count || 0);
 
@@ -485,3 +549,349 @@ export async function getZapTotalsFromDb(pubkey: string): Promise<ZapTotalsRow |
   if (res.rows.length === 0) return null;
   return res.rows[0] as unknown as ZapTotalsRow;
 }
+
+/**
+ * Inserts a new agent spending record into agent_spending_records.
+ */
+export async function insertSpendingRecord(record: {
+  id: string;
+  amount_sats: number;
+  rail: string;
+  recipient_pubkey?: string | null;
+  event_id?: string | null;
+  memo?: string | null;
+  created_at: number;
+}): Promise<void> {
+  await initDatabase();
+  const db = getDb();
+
+  await db.execute({
+    sql: `
+      INSERT INTO agent_spending_records (id, amount_sats, rail, recipient_pubkey, event_id, memo, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    args: [
+      record.id,
+      record.amount_sats,
+      record.rail,
+      record.recipient_pubkey ? record.recipient_pubkey.toLowerCase() : null,
+      record.event_id || null,
+      record.memo || null,
+      record.created_at,
+    ],
+  });
+}
+
+/**
+ * Retrieves agent spending records since a given epoch timestamp in seconds.
+ */
+export async function getRecentSpendingRecords(sinceEpochSec: number): Promise<Array<{
+  id: string;
+  amount_sats: number;
+  rail: string;
+  recipient_pubkey: string | null;
+  event_id: string | null;
+  memo: string | null;
+  created_at: number;
+}>> {
+  await initDatabase();
+  const db = getDb();
+
+  const res = await db.execute({
+    sql: `
+      SELECT * FROM agent_spending_records
+      WHERE created_at >= ?
+      ORDER BY created_at DESC
+    `,
+    args: [sinceEpochSec],
+  });
+
+  return res.rows.map((r: any) => ({
+    id: String(r.id),
+    amount_sats: Number(r.amount_sats),
+    rail: String(r.rail),
+    recipient_pubkey: r.recipient_pubkey ? String(r.recipient_pubkey) : null,
+    event_id: r.event_id ? String(r.event_id) : null,
+    memo: r.memo ? String(r.memo) : null,
+    created_at: Number(r.created_at),
+  }));
+}
+
+/**
+ * Inserts a new audit telemetry event.
+ */
+export async function insertTelemetryEvent(event: {
+  id: string;
+  event_type: string;
+  category: string;
+  status: string;
+  actor_pubkey?: string | null;
+  target_pubkey?: string | null;
+  amount_sats?: number | null;
+  latency_ms?: number | null;
+  metadata_json?: string | null;
+  error?: string | null;
+  created_at: number;
+}): Promise<void> {
+  await initDatabase();
+  const db = getDb();
+
+  await db.execute({
+    sql: `
+      INSERT INTO telemetry_events (
+        id, event_type, category, status, actor_pubkey, target_pubkey,
+        amount_sats, latency_ms, metadata_json, error, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    args: [
+      event.id,
+      event.event_type,
+      event.category,
+      event.status,
+      event.actor_pubkey ? event.actor_pubkey.toLowerCase() : null,
+      event.target_pubkey ? event.target_pubkey.toLowerCase() : null,
+      event.amount_sats ?? 0,
+      event.latency_ms ?? 0,
+      event.metadata_json || null,
+      event.error || null,
+      event.created_at,
+    ],
+  });
+}
+
+/**
+ * Queries telemetry audit events with optional filtering.
+ */
+export async function getTelemetryEventsFromDb(options: {
+  category?: string;
+  status?: string;
+  limit?: number;
+  since?: number;
+} = {}): Promise<any[]> {
+  await initDatabase();
+  const db = getDb();
+  const limit = options.limit || 50;
+
+  let sql = `SELECT * FROM telemetry_events WHERE 1=1`;
+  const args: any[] = [];
+
+  if (options.category) {
+    sql += ` AND category = ?`;
+    args.push(options.category);
+  }
+  if (options.status) {
+    sql += ` AND status = ?`;
+    args.push(options.status);
+  }
+  if (options.since) {
+    sql += ` AND created_at >= ?`;
+    args.push(options.since);
+  }
+
+  sql += ` ORDER BY created_at DESC LIMIT ?`;
+  args.push(limit);
+
+  const res = await db.execute({ sql, args });
+  return res.rows.map((r: any) => ({
+    id: String(r.id),
+    eventType: String(r.event_type),
+    category: String(r.category),
+    status: String(r.status),
+    actorPubkey: r.actor_pubkey ? String(r.actor_pubkey) : null,
+    targetPubkey: r.target_pubkey ? String(r.target_pubkey) : null,
+    amountSats: Number(r.amount_sats || 0),
+    latencyMs: Number(r.latency_ms || 0),
+    metadata: r.metadata_json ? JSON.parse(r.metadata_json) : {},
+    error: r.error ? String(r.error) : null,
+    createdAt: Number(r.created_at),
+  }));
+}
+
+/**
+ * Aggregates high-level telemetry statistics for developer dashboards.
+ */
+export async function getTelemetryStatsFromDb(): Promise<{
+  totalVolumeSats: number;
+  totalEvents: number;
+  successEvents: number;
+  failedEvents: number;
+  blockedEvents: number;
+}> {
+  await initDatabase();
+  const db = getDb();
+
+  const res = await db.execute(`
+    SELECT
+      COALESCE(SUM(amount_sats), 0) as totalVolumeSats,
+      COUNT(*) as totalEvents,
+      SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as successEvents,
+      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failedEvents,
+      SUM(CASE WHEN status = 'blocked' THEN 1 ELSE 0 END) as blockedEvents
+    FROM telemetry_events
+  `);
+
+  const row: any = res.rows[0] || {};
+  return {
+    totalVolumeSats: Number(row.totalVolumeSats || 0),
+    totalEvents: Number(row.totalEvents || 0),
+    successEvents: Number(row.successEvents || 0),
+    failedEvents: Number(row.failedEvents || 0),
+    blockedEvents: Number(row.blockedEvents || 0),
+  };
+}
+
+/**
+ * Inserts a spending decision log entry into agent_spending_log.
+ */
+export async function insertAgentSpendingLog(entry: {
+  id: string;
+  timestamp: number;
+  amount_sats: number;
+  recipient?: string | null;
+  rail: "nutzap" | "nwc" | string;
+  status: "approved" | "rejected";
+  reason?: string | null;
+}): Promise<void> {
+  await initDatabase();
+  const db = getDb();
+
+  await db.execute({
+    sql: `
+      INSERT INTO agent_spending_log (id, timestamp, amount_sats, recipient, rail, status, reason)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    args: [
+      entry.id,
+      entry.timestamp,
+      entry.amount_sats,
+      entry.recipient ? entry.recipient.toLowerCase() : null,
+      entry.rail,
+      entry.status,
+      entry.reason || null,
+    ],
+  });
+}
+
+/**
+ * Computes the total approved satoshis spent within the rolling 24-hour window.
+ */
+export async function getRolling24hApprovedSpend(sinceTimestamp: number): Promise<number> {
+  await initDatabase();
+  const db = getDb();
+
+  const res = await db.execute({
+    sql: `
+      SELECT COALESCE(SUM(amount_sats), 0) as total_spent
+      FROM agent_spending_log
+      WHERE status = 'approved' AND timestamp >= ?
+    `,
+    args: [sinceTimestamp],
+  });
+
+  return Number(res.rows[0]?.total_spent || 0);
+}
+
+/**
+ * Queries spending decision logs from agent_spending_log.
+ */
+export async function getAgentSpendingLogs(limit = 50): Promise<Array<{
+  id: string;
+  timestamp: number;
+  amount_sats: number;
+  recipient: string | null;
+  rail: string;
+  status: string;
+  reason: string | null;
+}>> {
+  await initDatabase();
+  const db = getDb();
+
+  const res = await db.execute({
+    sql: `
+      SELECT * FROM agent_spending_log
+      ORDER BY timestamp DESC
+      LIMIT ?
+    `,
+    args: [limit],
+  });
+
+  return res.rows.map((r: any) => ({
+    id: String(r.id),
+    timestamp: Number(r.timestamp),
+    amount_sats: Number(r.amount_sats),
+    recipient: r.recipient ? String(r.recipient) : null,
+    rail: String(r.rail),
+    status: String(r.status),
+    reason: r.reason ? String(r.reason) : null,
+  }));
+}
+
+/**
+ * Inserts a structured telemetry log entry into agent_telemetry.
+ */
+export async function insertAgentTelemetry(entry: {
+  id: string;
+  timestamp: number;
+  type: "payment" | "radar_block" | "job_settlement" | "mint_audit" | string;
+  data_json: string;
+  amount_sats?: number;
+}): Promise<void> {
+  await initDatabase();
+  const db = getDb();
+
+  await db.execute({
+    sql: `
+      INSERT INTO agent_telemetry (id, timestamp, type, data_json, amount_sats)
+      VALUES (?, ?, ?, ?, ?)
+    `,
+    args: [
+      entry.id,
+      entry.timestamp,
+      entry.type,
+      entry.data_json,
+      entry.amount_sats ?? 0,
+    ],
+  });
+}
+
+/**
+ * Retrieves agent telemetry records optionally filtered by sinceTimestamp and limited.
+ */
+export async function getAgentTelemetryRecords(
+  sinceTimestamp?: number,
+  limit = 50
+): Promise<Array<{
+  id: string;
+  timestamp: number;
+  type: string;
+  data_json: string;
+  amount_sats: number;
+}>> {
+  await initDatabase();
+  const db = getDb();
+
+  let sql = `SELECT * FROM agent_telemetry`;
+  const args: any[] = [];
+
+  if (sinceTimestamp !== undefined) {
+    sql += ` WHERE timestamp >= ?`;
+    args.push(sinceTimestamp);
+  }
+
+  sql += ` ORDER BY timestamp DESC LIMIT ?`;
+  args.push(limit);
+
+  const res = await db.execute({ sql, args });
+
+  return res.rows.map((r: any) => ({
+    id: String(r.id),
+    timestamp: Number(r.timestamp),
+    type: String(r.type),
+    data_json: String(r.data_json),
+    amount_sats: Number(r.amount_sats || 0),
+  }));
+}
+
+
+
