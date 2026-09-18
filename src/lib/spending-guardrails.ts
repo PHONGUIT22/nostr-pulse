@@ -60,10 +60,10 @@ export function getSpendingConfig(): SpendingGuardrailsConfig {
   const isEnabled = process.env.AGENT_GUARDRAILS_ENABLED !== "false" && process.env.AGENT_GUARDRAILS_ENABLED !== "0";
 
   return {
-    maxPerTxSats: parseEnvInt("AGENT_MAX_SATS_PER_TX", parseEnvInt("AGENT_MAX_TX_SATS", 50)),
+    maxPerTxSats: parseEnvInt("AGENT_MAX_SATS_PER_TX", parseEnvInt("AGENT_MAX_TX_SATS", 5000)),
     dailyBudgetSats: parseEnvInt(
       "AGENT_DAILY_LIMIT_SATS",
-      parseEnvInt("AGENT_DAILY_BUDGET_SATS", 500)
+      parseEnvInt("AGENT_DAILY_BUDGET_SATS", 25000)
     ),
     minRecipientTrustScore: parseEnvInt("AGENT_MIN_RECIPIENT_TRUST_SCORE", 0),
     enabled: isEnabled,
