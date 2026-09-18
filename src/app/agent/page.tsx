@@ -31,6 +31,10 @@ export default function AgentPage() {
 
           {/* Quick Feature Pills */}
           <div className="flex items-center justify-center gap-4 text-xs text-slate-400 flex-wrap pt-2">
+            <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              100% Zero-Cloud Sovereign Engine
+            </span>
             <span className="flex items-center gap-1.5">
               <Coins className="w-4 h-4 text-emerald-400" />
               Cashu NUTs V4 Support

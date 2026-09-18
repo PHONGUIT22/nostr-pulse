@@ -37,21 +37,67 @@ export default function MachineSpenderBot() {
   const [cashuToken, setCashuToken] = useState<string>("");
   const [showToken, setShowToken] = useState<boolean>(false);
 
+  // Engine Detection State (Local Ollama vs Sovereign Local Offline Engine vs Cloud)
+  const [engineInfo, setEngineInfo] = useState<{
+    isCloud: boolean;
+    isOllama: boolean;
+    name: string;
+  }>({
+    isCloud: false,
+    isOllama: true,
+    name: "Local Model (Ollama / Zero-Cloud)",
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/bot")
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data) {
+          setEngineInfo({
+            isCloud: data.engine === "cloud",
+            isOllama: data.engine === "ollama" || data.isOllama === true,
+            name:
+              data.engineName ||
+              (data.engine === "ollama"
+                ? "Local Model (Ollama)"
+                : data.engine === "cloud"
+                ? "Gemini 3.8 Flash"
+                : "Local Engine (Offline / Zero-Cloud)"),
+          });
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setEngineInfo({
+            isCloud: false,
+            isOllama: true,
+            name: "Local Engine (Offline / Zero-Cloud)",
+          });
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Chat Input State
   const [input, setInput] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
 
-  // Vercel AI SDK Transport with dynamic token resolution
+  // Vercel AI SDK Transport with dynamic token resolution and local model routing
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/bot",
         headers: {
           "x-cashu-token": cashuToken.trim(),
+          "x-use-ollama": "true",
         },
         body: {
           cashuToken: cashuToken.trim(),
+          useOllama: true,
         },
       }),
     [cashuToken]
@@ -98,9 +144,11 @@ export default function MachineSpenderBot() {
         {
           headers: {
             "x-cashu-token": activeToken,
+            "x-use-ollama": "true",
           },
           body: {
             cashuToken: activeToken,
+            useOllama: true,
           },
         }
       );
@@ -282,14 +330,43 @@ export default function MachineSpenderBot() {
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-sm text-white flex items-center gap-2">
+              <h4 className="font-bold text-sm text-white flex items-center gap-2 flex-wrap">
                 NostrPulse Autonomous Agent
-                <span className="text-[10px] font-mono bg-purple-950/70 text-purple-300 px-2 py-0.5 rounded-full border border-purple-800/60">
-                  Gemini 3.8 Flash • NIP-61
-                </span>
+                {engineInfo.isOllama ? (
+                  <span
+                    className="text-[10px] font-mono bg-emerald-950/90 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/60 flex items-center gap-1 shadow-sm"
+                    title="Running with local Ollama inference model (Zero external cloud LLM API calls)"
+                  >
+                    <Cpu className="w-3 h-3 text-emerald-400" />
+                    {engineInfo.name} • Local SLM
+                  </span>
+                ) : engineInfo.isCloud ? (
+                  <span
+                    className="text-[10px] font-mono bg-purple-950/70 text-purple-300 px-2 py-0.5 rounded-full border border-purple-800/60"
+                    title="Running with Cloud LLM"
+                  >
+                    {engineInfo.name} • NIP-61
+                  </span>
+                ) : (
+                  <span
+                    className="text-[10px] font-mono bg-emerald-950/80 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-600/50 flex items-center gap-1 shadow-sm"
+                    title="Running in sovereign zero-cloud mode. No external API keys required."
+                  >
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    Local Engine (Offline / Zero-Cloud) • NIP-61
+                  </span>
+                )}
               </h4>
-              <p className="text-[11px] text-slate-400">
-                Autonomous Agent: resolves creator pubkeys and signs NIP-44 encrypted eCash
+              <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span>Autonomous Agent: resolves creator pubkeys and signs NIP-44 encrypted eCash</span>
+                {!engineInfo.isCloud && (
+                  <span
+                    className="text-[10px] text-emerald-400/90 font-medium hidden sm:inline bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-800/30"
+                    title="Running in sovereign zero-cloud mode. No external API keys required."
+                  >
+                    Zero Cloud Keys
+                  </span>
+                )}
               </p>
             </div>
           </div>
