@@ -17,7 +17,7 @@
     "indexer": "tsx scripts/indexer-worker.ts",
     "enrich": "node src/scripts/enrich-creators.mjs",
     "mcp": "tsx src/mcp-entry.ts",
-    "build:mcp": "tsup src/mcp-entry.ts --format esm --target node20 --clean --banner.js \"#!/usr/bin/env node\""
+    "build:mcp": "tsup"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.63",
