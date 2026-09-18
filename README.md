@@ -24,13 +24,13 @@
 </p>
 
 <p align="center">
-  <a href="https://nostrpulse.vercel.app/"><b>🚀 Launch Live Explorer »</b></a> •
+  <a href="https://nostr-pulse.vercel.app/"><b>🚀 Launch Live Explorer »</b></a> •
   <a href="#-walkthrough-demo-video"><b>Demo Video</b></a> •
   <a href="#-happy-path-evaluation-guide-for-judges"><b>Evaluation Guide</b></a> •
   <a href="#-feature-completeness-matrix"><b>Finished vs. Unfinished</b></a> •
   <a href="#-clean-machine-test--setup"><b>Local Setup</b></a> •
-  <a href="https://nostrpulse.vercel.app/agent"><b>AI Agent Hub</b></a> •
-  <a href="https://nostrpulse.vercel.app/bounties"><b>Bounty Board</b></a>
+  <a href="https://nostr-pulse.vercel.app/agent"><b>AI Agent Hub</b></a> •
+  <a href="https://nostr-pulse.vercel.app/bounties"><b>Bounty Board</b></a>
 </p>
 
 </div>
