@@ -13,38 +13,41 @@ import {
 import {
   getCreatorFromDb,
   getZapTotalsFromDb
-} from "./chunk-JHYB5MLN.js";
+} from "./chunk-UEOH474S.js";
 import {
   fetchNostrProfile
-} from "./chunk-ATKN57WH.js";
+} from "./chunk-PIGNIESQ.js";
 
 // src/lib/cashu.ts
-import { getDecodedToken, getEncodedToken, Wallet } from "@cashu/cashu-ts";
+import { getEncodedToken, Wallet } from "@cashu/cashu-ts";
 import { finalizeEvent, generateSecretKey } from "nostr-tools/pure";
 import { SimplePool } from "nostr-tools/pool";
 import { nip19, nip04, nip44 } from "nostr-tools";
 var RECOMMENDED_MINTS = [
   {
-    name: "Cashu Testnut (Demo / Test Sats)",
-    url: "https://testnut.cashu.space",
-    description: "Official Cashu core testnet mint (Recommended for live demos)",
-    recommended: true
-  },
-  {
     name: "Minibits Mint",
     url: "https://mint.minibits.cash/Bitcoin",
-    description: "High-uptime trusted node with instant Lightning routing"
+    description: "High-uptime trusted node with instant Lightning routing",
+    recommended: true
   },
   {
     name: "Macadamia Mint",
     url: "https://mint.macadamia.cash",
     description: "Reliable community-driven mint with high uptime"
+  },
+  {
+    name: "Cashu Testnut (Demo / Test Sats)",
+    url: "https://testnut.cashu.space",
+    description: "Official Cashu core testnet mint (Recommended for live demos)"
   }
 ];
-var DEFAULT_CASHU_MINT = "https://testnut.cashu.space";
+var DEFAULT_CASHU_MINT = RECOMMENDED_MINTS[0].url;
 var RELAYS = [
-  "wss://relay.primal.net",
-  "wss://nos.lol"
+  "wss://relay.damus.io",
+  "wss://nos.lol",
+  "wss://nostr.band",
+  "wss://purplerelay.com",
+  "wss://relay.current.fyi"
 ];
 function bytesToHex(bytes) {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -127,23 +130,6 @@ function decodeCbor(bytes) {
   }
   return decodeItem();
 }
-function encodeCashuToken(mintUrl, proofs, unit = "sat") {
-  const cleanMint = mintUrl.trim().replace(/\/+$/, "");
-  try {
-    if (typeof getEncodedToken === "function") {
-      return getEncodedToken({ mint: cleanMint, proofs, unit });
-    }
-  } catch (err) {
-    console.debug("[Cashu] getEncodedToken fallback to manual encoding:", err);
-  }
-  const v3Payload = {
-    token: [{ mint: cleanMint, proofs }],
-    unit
-  };
-  const jsonStr = JSON.stringify(v3Payload);
-  const base64 = typeof window !== "undefined" ? btoa(unescape(encodeURIComponent(jsonStr))) : Buffer.from(jsonStr, "utf-8").toString("base64");
-  return `cashuA${base64.replace(/\+/g, "-").replace(/\//g, "_")}`;
-}
 function decodeCashuString(tokenString) {
   const trimmed = tokenString.trim();
   const lower = trimmed.toLowerCase();
@@ -173,82 +159,57 @@ function parseCashuToken(tokenString) {
   if (!lower.startsWith("cashua") && !lower.startsWith("cashub")) {
     throw new Error("Invalid token format. Cashu tokens must start with 'cashuA' or 'cashuB'.");
   }
-  let mint = "";
-  let proofs = [];
-  let unit = "sat";
-  try {
-    let decoded = null;
-    try {
-      decoded = getDecodedToken(trimmed, []);
-    } catch {
-      decoded = getDecodedToken(trimmed);
-    }
-    if (decoded) {
-      if (decoded.mint) {
-        mint = decoded.mint;
-      } else if (Array.isArray(decoded.token) && decoded.token.length > 0) {
-        mint = decoded.token[0].mint;
-      }
-      if (Array.isArray(decoded.proofs)) {
-        proofs = decoded.proofs.map((p) => ({
-          ...p,
-          amount: typeof p.amount?.toNumber === "function" ? p.amount.toNumber() : Number(p.amount || 0)
-        }));
-      } else if (Array.isArray(decoded.token) && decoded.token.length > 0) {
-        proofs = decoded.token.flatMap(
-          (t) => (t.proofs || []).map((p) => ({
-            ...p,
-            amount: typeof p.amount?.toNumber === "function" ? p.amount.toNumber() : Number(p.amount || 0)
-          }))
-        );
-      }
-      if (decoded.unit) unit = decoded.unit;
-    }
-  } catch (decErr) {
-    console.debug("[Cashu] getDecodedToken fallback to manual parsing:", decErr);
+  const decoded = decodeCashuString(trimmed);
+  if (!decoded) {
+    throw new Error("Could not decode Cashu token payload.");
   }
-  if (proofs.length === 0) {
-    const decoded = decodeCashuString(trimmed);
-    if (decoded) {
-      if (Array.isArray(decoded.t)) {
-        mint = decoded.m || mint;
-        for (const group of decoded.t) {
-          const keysetIdHex = group.i instanceof Uint8Array ? bytesToHex(group.i) : String(group.i || "");
-          if (Array.isArray(group.p)) {
-            for (const p of group.p) {
-              const cHex = p.c instanceof Uint8Array ? bytesToHex(p.c) : String(p.c || p.C || "");
-              proofs.push({
-                id: keysetIdHex,
-                amount: Number(p.a || p.amount || 0),
-                secret: String(p.s || p.secret || ""),
-                C: cHex
-              });
-            }
+  let mint = DEFAULT_CASHU_MINT;
+  let proofs = [];
+  let unit = decoded.unit || decoded.u || "sat";
+  if (Array.isArray(decoded.t)) {
+    mint = decoded.m || DEFAULT_CASHU_MINT;
+    for (const group of decoded.t) {
+      let keysetIdHex = "";
+      if (group.i instanceof Uint8Array) {
+        keysetIdHex = bytesToHex(group.i);
+      } else if (typeof group.i === "string") {
+        keysetIdHex = group.i;
+      } else if (group.i) {
+        keysetIdHex = String(group.i);
+      }
+      if (Array.isArray(group.p)) {
+        for (const p of group.p) {
+          let cHex = "";
+          if (p.c instanceof Uint8Array) {
+            cHex = bytesToHex(p.c);
+          } else if (typeof p.c === "string") {
+            cHex = p.c;
+          } else if (p.C) {
+            cHex = p.C instanceof Uint8Array ? bytesToHex(p.C) : String(p.C);
           }
+          proofs.push({
+            id: keysetIdHex,
+            amount: Number(p.a || p.amount || 0),
+            secret: String(p.s || p.secret || ""),
+            C: cHex
+          });
         }
-      } else if (Array.isArray(decoded.proofs)) {
-        mint = decoded.mint || mint;
-        proofs = decoded.proofs;
-      } else if (Array.isArray(decoded.token) && decoded.token.length > 0) {
-        mint = decoded.token[0].mint || mint;
-        for (const entry of decoded.token) {
-          if (entry.unit) unit = entry.unit;
-          if (Array.isArray(entry.proofs)) proofs.push(...entry.proofs);
-        }
+      }
+    }
+  } else if (Array.isArray(decoded.proofs)) {
+    mint = decoded.mint || DEFAULT_CASHU_MINT;
+    proofs = decoded.proofs;
+  } else if (Array.isArray(decoded.token) && decoded.token.length > 0) {
+    mint = decoded.token[0].mint || DEFAULT_CASHU_MINT;
+    for (const entry of decoded.token) {
+      if (entry.unit) unit = entry.unit;
+      if (Array.isArray(entry.proofs)) {
+        proofs.push(...entry.proofs);
       }
     }
   }
   if (proofs.length === 0) {
     throw new Error("No cryptographic proofs found inside the token.");
-  }
-  unit = (unit || "sat").toLowerCase().trim();
-  if (mint) {
-    mint = mint.trim().replace(/\/+$/, "");
-    if (!mint.startsWith("http://") && !mint.startsWith("https://")) {
-      mint = `https://${mint}`;
-    }
-  } else {
-    mint = DEFAULT_CASHU_MINT;
   }
   const totalAmountSats = proofs.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   return {
@@ -258,70 +219,6 @@ function parseCashuToken(tokenString) {
     proofs
   };
 }
-async function splitCashuToken(tokenString, amountToSend, overrideMintUrl) {
-  const info = parseCashuToken(tokenString);
-  if (info.totalAmountSats < amountToSend) {
-    throw new Error(`Insufficient funds: token has ${info.totalAmountSats} sats, but ${amountToSend} sats required.`);
-  }
-  if (info.totalAmountSats === amountToSend) {
-    return { sendToken: tokenString, changeToken: null };
-  }
-  const normalizedUnit = (info.unit || "sat").toLowerCase().trim();
-  let targetMint = info.mint || overrideMintUrl || DEFAULT_CASHU_MINT;
-  let cleanMint = targetMint.trim().replace(/\/+$/, "");
-  if (!cleanMint.startsWith("http://") && !cleanMint.startsWith("https://")) {
-    cleanMint = `https://${cleanMint}`;
-  }
-  console.log(`[splitCashuToken] Connecting to Mint: "${cleanMint}", Unit: "${normalizedUnit}"`);
-  const wallet = new Wallet(cleanMint, { unit: normalizedUnit });
-  await wallet.loadMint(true);
-  let mintKeysetIds = [];
-  try {
-    const res = await fetch(`${cleanMint}/v1/keysets`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.keysets)) {
-        mintKeysetIds = data.keysets.map((k) => k.id);
-      }
-    }
-  } catch (err) {
-    console.warn("[splitCashuToken] Could not fetch keysets directly, falling back to cache:", err);
-    mintKeysetIds = wallet.keyChain?.cache?.keysets?.map((k) => k.id) || [];
-  }
-  console.log(`[splitCashuToken] Full Mint Keysets available:`, mintKeysetIds);
-  const normalizedProofs = info.proofs.map((proof) => {
-    const rawId = String(proof.id);
-    const fullMatch = mintKeysetIds.find((fullId) => fullId === rawId || fullId.startsWith(rawId));
-    if (fullMatch && fullMatch !== rawId) {
-      console.log(`[splitCashuToken] Auto-expanded truncated keyset: ${rawId} -> ${fullMatch}`);
-      return { ...proof, id: fullMatch };
-    }
-    return proof;
-  });
-  try {
-    if (typeof wallet.ensureOperableKeysets === "function") {
-      const keysetIds = Array.from(new Set(normalizedProofs.map((p) => p.id)));
-      await wallet.ensureOperableKeysets(keysetIds);
-    }
-    let sendResult;
-    if (wallet.ops && typeof wallet.ops.send === "function") {
-      sendResult = await wallet.ops.send(amountToSend, normalizedProofs).run();
-    } else {
-      sendResult = await wallet.send(amountToSend, normalizedProofs);
-    }
-    const returnChange = sendResult.keep || sendResult.returnChange;
-    const send = sendResult.send;
-    const sendToken = encodeCashuToken(cleanMint, send, normalizedUnit);
-    const changeToken = returnChange && returnChange.length > 0 ? encodeCashuToken(cleanMint, returnChange, normalizedUnit) : null;
-    return { sendToken, changeToken };
-  } catch (error) {
-    if (error.name === "UnknownKeysetError" || error.message && error.message.includes("not a keyset of this mint")) {
-      console.error(`[splitCashuToken] Keyset Error: Token does not belong to Mint ${cleanMint}`);
-      throw new Error(`Invalid eCash token or keyset does not belong to active Mint (${cleanMint}). Please check your token.`);
-    }
-    throw error;
-  }
-}
 async function createCashuMintQuote(amountSats, mintUrl = DEFAULT_CASHU_MINT) {
   const cleanMint = mintUrl.trim().replace(/\/+$/, "");
   try {
@@ -329,8 +226,7 @@ async function createCashuMintQuote(amountSats, mintUrl = DEFAULT_CASHU_MINT) {
     if (typeof wallet.loadMint === "function") {
       try {
         await wallet.loadMint();
-      } catch (loadErr) {
-        console.debug("[Cashu] loadMint warning during quote creation:", loadErr);
+      } catch {
       }
     }
     if (typeof wallet.createMintQuoteBolt11 === "function") {
@@ -341,8 +237,7 @@ async function createCashuMintQuote(amountSats, mintUrl = DEFAULT_CASHU_MINT) {
           quoteId: quote.quote || quote.hash || quote.id,
           mintUrl: cleanMint
         };
-      } catch (bolt11Err) {
-        console.debug("[Cashu] createMintQuoteBolt11 fallback:", bolt11Err);
+      } catch {
       }
     }
     if (typeof wallet.createMintQuote === "function") {
@@ -353,8 +248,7 @@ async function createCashuMintQuote(amountSats, mintUrl = DEFAULT_CASHU_MINT) {
           quoteId: quote.quote || quote.hash || quote.id,
           mintUrl: cleanMint
         };
-      } catch (createErr) {
-        console.debug("[Cashu] createMintQuote('bolt11') failed, trying default arg:", createErr);
+      } catch {
         try {
           const quote = await wallet.createMintQuote(amountSats);
           return {
@@ -362,13 +256,12 @@ async function createCashuMintQuote(amountSats, mintUrl = DEFAULT_CASHU_MINT) {
             quoteId: quote.quote || quote.hash || quote.id,
             mintUrl: cleanMint
           };
-        } catch (quoteErr) {
-          console.debug("[Cashu] createMintQuote fallback failed:", quoteErr);
+        } catch {
         }
       }
     }
   } catch (walletErr) {
-    console.debug("[Cashu] Wallet instance mint quote failed, attempting direct REST fallback:", walletErr);
+    console.warn("Wallet instance mint quote failed, attempting direct REST fallback:", walletErr);
   }
   try {
     const res = await fetch(`${cleanMint}/v1/mint/quote/bolt11`, {
@@ -387,7 +280,7 @@ async function createCashuMintQuote(amountSats, mintUrl = DEFAULT_CASHU_MINT) {
       }
     }
   } catch (err) {
-    console.debug("[Cashu] Direct NUT-04 REST Mint request failed:", err);
+    console.error("Direct NUT-04 REST Mint request failed:", err);
   }
   throw new Error(`Could not request Mint invoice from ${cleanMint}.`);
 }
@@ -396,16 +289,14 @@ async function encryptCashuPayload(recipientHexPubkey, rawPayload, ephemeralSk) 
     try {
       const encrypted2 = await window.nostr.nip44.encrypt(recipientHexPubkey, rawPayload);
       if (encrypted2) return { encryptedContent: encrypted2, encryptionScheme: "nip44" };
-    } catch (err) {
-      console.debug("[Cashu] Window nostr NIP-44 encryption failed, falling back:", err);
+    } catch {
     }
   }
   if (typeof window !== "undefined" && window.nostr?.nip04?.encrypt) {
     try {
       const encrypted2 = await window.nostr.nip04.encrypt(recipientHexPubkey, rawPayload);
       if (encrypted2) return { encryptedContent: encrypted2, encryptionScheme: "nip04" };
-    } catch (err) {
-      console.debug("[Cashu] Window nostr NIP-04 encryption failed, falling back:", err);
+    } catch {
     }
   }
   try {
@@ -414,8 +305,7 @@ async function encryptCashuPayload(recipientHexPubkey, rawPayload, ephemeralSk) 
       const encrypted2 = nip44.v2.encrypt(rawPayload, conversationKey);
       return { encryptedContent: encrypted2, encryptionScheme: "nip44" };
     }
-  } catch (err) {
-    console.debug("[Cashu] Local nostr-tools NIP-44 v2 encryption failed, falling back to NIP-04:", err);
+  } catch {
   }
   const encrypted = await nip04.encrypt(ephemeralSk, recipientHexPubkey, rawPayload);
   return { encryptedContent: encrypted, encryptionScheme: "nip04" };
@@ -432,21 +322,16 @@ async function sendCashuNutZap({
     try {
       const decoded = nip19.decode(hexPubkey);
       if (decoded.type === "npub") hexPubkey = decoded.data;
-    } catch (err) {
-      console.debug("[Cashu] Recipient npub decoding fallback:", err);
+    } catch {
     }
   }
   if (!hexPubkey || !/^[0-9a-fA-F]{64}$/.test(hexPubkey)) {
     throw new Error("Invalid recipient pubkey format.");
   }
-  let cleanMint = (mintUrl || DEFAULT_CASHU_MINT).trim().replace(/\/+$/, "");
-  if (!cleanMint.startsWith("http://") && !cleanMint.startsWith("https://")) {
-    cleanMint = `https://${cleanMint}`;
-  }
+  const cleanMint = (mintUrl || DEFAULT_CASHU_MINT).trim().replace(/\/+$/, "");
   const ephemeralSk = generateSecretKey();
-  const { sendToken, changeToken } = await splitCashuToken(cashuToken, amountSats, cleanMint);
   const secretNutZapPayload = JSON.stringify({
-    token: sendToken.trim(),
+    token: cashuToken.trim(),
     memo: comment?.trim() || "Value-4-Value eCash NutZap \u{1F95C}",
     amount: amountSats,
     mint: cleanMint,
@@ -473,8 +358,7 @@ async function sendCashuNutZap({
   if (typeof window !== "undefined" && window.nostr?.signEvent) {
     try {
       signedEvent = await window.nostr.signEvent(eventTemplate);
-    } catch (err) {
-      console.debug("[Cashu] Window nostr.signEvent failed, using ephemeral key:", err);
+    } catch {
     }
   }
   if (!signedEvent) {
@@ -482,35 +366,15 @@ async function sendCashuNutZap({
   }
   const pool = new SimplePool();
   try {
-    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1500));
-    const publishPromises = RELAYS.map(async (relayUrl) => {
-      try {
-        const pub = pool.publish([relayUrl], signedEvent);
-        await Promise.race([pub, timeoutPromise]);
-      } catch (err) {
-        console.debug(`[Cashu] Failed to publish NutZap to ${relayUrl}:`, err);
-      }
-    });
+    const pubPromises = pool.publish(RELAYS, signedEvent);
     await Promise.race([
-      Promise.allSettled(publishPromises),
-      new Promise((resolve) => setTimeout(resolve, 2e3))
+      Promise.any(pubPromises),
+      new Promise((resolve) => setTimeout(resolve, 3e3))
     ]);
   } catch (err) {
-    console.debug("[Cashu] Relay pool broadcast finished with warnings:", err);
-  } finally {
-    try {
-      pool.close(RELAYS);
-    } catch (err) {
-      console.debug("[Cashu] Pool close warning:", err);
-    }
+    console.warn("NutZap publish warning:", err);
   }
-  return {
-    signedEvent,
-    changeToken,
-    id: signedEvent.id,
-    kind: signedEvent.kind,
-    ...signedEvent
-  };
+  return signedEvent;
 }
 
 // src/lib/mint-mesh.ts
@@ -1119,12 +983,12 @@ async function routeCashuMint(options = {}) {
 }
 
 export {
-  DEFAULT_MINT_MESH_URLS,
-  auditCashuMint,
-  selectBestMint,
-  routeCashuMint,
   DEFAULT_CASHU_MINT,
   parseCashuToken,
   createCashuMintQuote,
-  sendCashuNutZap
+  sendCashuNutZap,
+  DEFAULT_MINT_MESH_URLS,
+  auditCashuMint,
+  selectBestMint,
+  routeCashuMint
 };

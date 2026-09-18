@@ -95,8 +95,15 @@ function getOrInitAgentIdentity(options = {}) {
   const filePaths = getIdentityFilePaths(options.cwd);
   for (const filePath of [filePaths.primary, filePaths.fallback]) {
     try {
-      if (fs.existsSync(filePath)) {
-        const fileContent = fs.readFileSync(filePath, "utf-8");
+      if (fs.existsSync(
+        /*turbopackIgnore: true*/
+        filePath
+      )) {
+        const fileContent = fs.readFileSync(
+          /*turbopackIgnore: true*/
+          filePath,
+          "utf-8"
+        );
         const parsed = JSON.parse(fileContent);
         if (parsed && (parsed.privHex || parsed.nsec)) {
           const sk = parsePrivateKey(parsed.privHex || parsed.nsec);

@@ -5,7 +5,7 @@ import {
   getAgentPubkey,
   getOrInitAgentIdentity,
   parsePrivateKey
-} from "./chunk-OZL5FZ3S.js";
+} from "./chunk-5WBKDHXQ.js";
 export {
   clearAgentIdentityCache,
   getAgentNpub,

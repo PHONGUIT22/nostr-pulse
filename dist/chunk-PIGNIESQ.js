@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {
   creators_default
-} from "./chunk-5OMV7EKZ.js";
+} from "./chunk-A334PT4L.js";
 
 // src/lib/nostr.ts
 import { nip19 as nip192 } from "nostr-tools";

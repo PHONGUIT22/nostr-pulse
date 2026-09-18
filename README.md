@@ -54,7 +54,7 @@
 | **Primary Track** | **Track 2: Freedom Stack** *(Decisive UI/UX & Asynchronous eCash)* |
 | **Secondary Track** | **Track 1: Machine Money** *(Autonomous AI Agents, MCP Server, NIP-90 DVM)* |
 | **Team / Author** | **Nguyen Hac Phong** ([@PHONGUIT22](https://github.com/PHONGUIT22)) — *Solo Entry*<br>• *Role:* Lead Architect, Protocol Engineer & Full-Stack Developer |
-| **Live Production App** | [https://nostrpulse.vercel.app](https://nostrpulse.vercel.app) *(Edge CDN deployed)* |
+| **Live Production App** | [https://nostr-pulse.vercel.app](https://nostr-pulse.vercel.app) *(Edge CDN deployed)* |
 | **Source Repository** | [https://github.com/PHONGUIT22/nostr-pulse](https://github.com/PHONGUIT22/nostr-pulse) |
 | **NPM Package** | [`nostrpulse-mcp` on npm](https://www.npmjs.com/package/nostrpulse-mcp) *(v1.2.0)* |
 | **License** | Open-source under the [MIT License](LICENSE) |
@@ -195,19 +195,19 @@ npm run build
 You can evaluate the complete system without installing browser extensions or spending real money:
 
 ### Step 1: 1-Click Anti-Sybil Matrix Inspection (Freedom Stack)
-1. Navigate to the **[Live App Homepage](https://nostrpulse.vercel.app/)**.
+1. Navigate to the **[Live App Homepage](https://nostr-pulse.vercel.app/)**.
 2. Immediately below the search bar, locate the **Live Interactive Demo** section.
-3. Click **🔥 Inspect Verified Builder** ([fiatjaf](https://nostrpulse.vercel.app/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6)):
+3. Click **🔥 Inspect Verified Builder** ([fiatjaf](https://nostr-pulse.vercel.app/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6)):
    - Observe the **95 pts** score with the emerald `Verified Builder` tier.
    - Inspect the **Hop 0: Core Root Anchor** cryptographic status (45/45 graph pts), verified NIP-05 DNS signature (`_@fiatjaf.com`), active Lightning endpoint, and network longevity.
-4. Click **⚠️ Inspect Sybil Bot Clone** ([anon_bot](https://nostrpulse.vercel.app/p/anon_bot)):
+4. Click **⚠️ Inspect Sybil Bot Clone** ([anon_bot](https://nostr-pulse.vercel.app/p/anon_bot)):
    - Observe how synthetic profile metadata (avatar, bio, external link) accumulated raw points.
    - Notice the **Anti-Sybil Gatekeeper Enforced**: because it has zero graph connectivity (`distance = 3`) and zero incoming WoT sats, its score is **strictly hard-capped at $\le$ 25 pts** (`Unverified / Potential Bot`, `Vulnerable` Sybil resistance), mathematically preventing metadata gaming.
 
 ---
 
 ### Step 2: Send a NIP-61 NutZap (Sender Pipeline)
-1. On any creator profile (e.g., [Jack](https://nostrpulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)), scroll to the **Support Creator** card.
+1. On any creator profile (e.g., [Jack](https://nostr-pulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)), scroll to the **Support Creator** card.
 2. Switch payment tab to **Cashu eCash (NIP-61)**.
 3. Obtain a testnet Cashu token via either method:
    - **Method A (In-App 1-Click Mint):** Switch to **1-Click Mint**, select a satoshi amount (e.g. 21 Sats), and settle the testnet invoice.
@@ -239,7 +239,7 @@ You can evaluate the complete system without installing browser extensions or sp
    - NostrPulse ships with a zero-dependency Vanilla JS embed script at `/widget.js`.
    - Any website, blog, or static creator page can embed eCash tipping with a single line:
      ```html
-     <script src="https://nostrpulse.vercel.app/widget.js" data-npub="npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" data-name="fiatjaf" async></script>
+     <script src="https://nostr-pulse.vercel.app/widget.js" data-npub="npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" data-name="fiatjaf" async></script>
      ```
    - Or use the custom Web Component:
      ```html
@@ -250,7 +250,7 @@ You can evaluate the complete system without installing browser extensions or sp
 2. **Test Public Open Reputation REST API:**
    - External Nostr clients (Amethyst, Coracle, Snort) can query the CORS-enabled trust endpoint directly for anti-spam filtering:
      ```bash
-     curl -s https://nostrpulse.vercel.app/api/v1/trust-score/3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d
+     curl -s https://nostr-pulse.vercel.app/api/v1/trust-score/3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d
      ```
    - Returns structured JSON containing `score`, `tier`, `wot.distance`, `wot.endorsers_count`, `economic_stake.total_valid_sats`, and `sybil_resistance_level`.
 

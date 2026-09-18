@@ -2,7 +2,29 @@
 import {
   getSpendingSummary,
   recordAgentSpending
-} from "./chunk-DRAZQJBA.js";
+} from "./chunk-P5CMUG5H.js";
+import {
+  MAJOR_INDEXER_RELAYS,
+  decodeBolt11AmountSats
+} from "./chunk-EALAT4FZ.js";
+import {
+  assertSpendingAllowed,
+  getRolling24hSpend,
+  getSpendingPolicy
+} from "./chunk-KE5YZBLK.js";
+import {
+  getAgentTelemetrySummary,
+  getTelemetryOverview,
+  logAgentEvent,
+  logTelemetryEvent,
+  queryTelemetryEvents
+} from "./chunk-LNEBNG6B.js";
+import {
+  getOrInitAgentIdentity
+} from "./chunk-5WBKDHXQ.js";
+import {
+  payWithNWC
+} from "./chunk-TIRW26YG.js";
 import {
   DEFAULT_CASHU_MINT,
   auditCashuMint,
@@ -10,17 +32,8 @@ import {
   parseCashuToken,
   routeCashuMint,
   sendCashuNutZap
-} from "./chunk-5ESBNA4V.js";
-import {
-  MAJOR_INDEXER_RELAYS,
-  decodeBolt11AmountSats
-} from "./chunk-JTEXOGO4.js";
+} from "./chunk-3T5VUZXK.js";
 import "./chunk-CDTDPUJF.js";
-import {
-  assertSpendingAllowed,
-  getRolling24hSpend,
-  getSpendingPolicy
-} from "./chunk-C3LOZ2XO.js";
 import {
   calculateTrustScore
 } from "./chunk-TEBCT7SR.js";
@@ -30,13 +43,6 @@ import {
   normalizePubkey
 } from "./chunk-RI52V5BR.js";
 import {
-  getAgentTelemetrySummary,
-  getTelemetryOverview,
-  logAgentEvent,
-  logTelemetryEvent,
-  queryTelemetryEvents
-} from "./chunk-3V5XEVMQ.js";
-import {
   accumulateZapTotals,
   getCreatorFromDb,
   getTrustEdgesFromDb,
@@ -44,19 +50,13 @@ import {
   initDatabase,
   recordZapEdge,
   upsertZapTotals
-} from "./chunk-JHYB5MLN.js";
-import {
-  getOrInitAgentIdentity
-} from "./chunk-OZL5FZ3S.js";
-import {
-  payWithNWC
-} from "./chunk-ZQA6N3HW.js";
+} from "./chunk-UEOH474S.js";
 import {
   DEFAULT_RELAYS,
   getNostrPool,
   normalizeToHex
-} from "./chunk-ATKN57WH.js";
-import "./chunk-5OMV7EKZ.js";
+} from "./chunk-PIGNIESQ.js";
+import "./chunk-A334PT4L.js";
 
 // src/mcp-entry.ts
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -269,10 +269,10 @@ globalToolRegistry.registerTool({
     required: ["invoice"]
   },
   execute: async (args) => {
-    const { assertSpendingAllowed: assertSpendingAllowed2 } = await import("./guardrails-FH5YXAGE.js");
-    const { logAgentEvent: logAgentEvent2 } = await import("./telemetry-A6BRHBKS.js");
-    const { decodeBolt11AmountSats: decodeBolt11AmountSats2 } = await import("./indexer-DVTUBL7Z.js");
-    const { payWithNWC: payWithNWC2 } = await import("./nwc-NCU3WSOP.js");
+    const { assertSpendingAllowed: assertSpendingAllowed2 } = await import("./guardrails-NOP2T7LB.js");
+    const { logAgentEvent: logAgentEvent2 } = await import("./telemetry-6KUR4ZVW.js");
+    const { decodeBolt11AmountSats: decodeBolt11AmountSats2 } = await import("./indexer-YEF6LIRC.js");
+    const { payWithNWC: payWithNWC2 } = await import("./nwc-MZICHVJ7.js");
     const amountSats = args.amountMsat && args.amountMsat > 0 ? Math.round(args.amountMsat / 1e3) : decodeBolt11AmountSats2(args.invoice) || 1;
     const guardrail = await assertSpendingAllowed2({
       amountSats,
@@ -334,7 +334,7 @@ globalToolRegistry.registerTool({
     required: ["mintUrl"]
   },
   execute: async (args) => {
-    const { auditCashuMint: auditCashuMint2 } = await import("./mint-mesh-XAYJB3MA.js");
+    const { auditCashuMint: auditCashuMint2 } = await import("./mint-mesh-BOHNGSHO.js");
     return auditCashuMint2(args.mintUrl, args.forceRefresh);
   }
 });
@@ -359,7 +359,7 @@ globalToolRegistry.registerTool({
     }
   },
   execute: async (args) => {
-    const { routeCashuMint: routeCashuMint2 } = await import("./mint-mesh-XAYJB3MA.js");
+    const { routeCashuMint: routeCashuMint2 } = await import("./mint-mesh-BOHNGSHO.js");
     return routeCashuMint2({
       amountSats: args.amountSats,
       preferredMint: args.preferredMint,
@@ -375,7 +375,7 @@ globalToolRegistry.registerTool({
     properties: {}
   },
   execute: async () => {
-    const { getOrInitAgentIdentity: getOrInitAgentIdentity2 } = await import("./identity-manager-R4GKAITL.js");
+    const { getOrInitAgentIdentity: getOrInitAgentIdentity2 } = await import("./identity-manager-E4SUCG4A.js");
     const identity = getOrInitAgentIdentity2();
     return {
       pubkey: identity.pubkey,
@@ -394,7 +394,7 @@ globalToolRegistry.registerTool({
     properties: {}
   },
   execute: async () => {
-    const { getSpendingSummary: getSpendingSummary2 } = await import("./spending-guardrails-OAOGWQW5.js");
+    const { getSpendingSummary: getSpendingSummary2 } = await import("./spending-guardrails-JBHMPSDX.js");
     return getSpendingSummary2();
   }
 });
@@ -415,8 +415,8 @@ globalToolRegistry.registerTool({
     }
   },
   execute: async (args) => {
-    const { getSpendingPolicy: getSpendingPolicy2, getRolling24hSpend: getRolling24hSpend2 } = await import("./guardrails-FH5YXAGE.js");
-    const { getAgentTelemetrySummary: getAgentTelemetrySummary2, getTelemetryOverview: getTelemetryOverview2, queryTelemetryEvents: queryTelemetryEvents2 } = await import("./telemetry-A6BRHBKS.js");
+    const { getSpendingPolicy: getSpendingPolicy2, getRolling24hSpend: getRolling24hSpend2 } = await import("./guardrails-NOP2T7LB.js");
+    const { getAgentTelemetrySummary: getAgentTelemetrySummary2, getTelemetryOverview: getTelemetryOverview2, queryTelemetryEvents: queryTelemetryEvents2 } = await import("./telemetry-6KUR4ZVW.js");
     const hours = Number(args.timeframeHours) || 24;
     const limit = Number(args.limit) || 20;
     const policy = getSpendingPolicy2();

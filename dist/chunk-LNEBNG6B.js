@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import {
+  getAgentPubkey
+} from "./chunk-5WBKDHXQ.js";
+import {
   getAgentTelemetryRecords,
   getTelemetryEventsFromDb,
   getTelemetryStatsFromDb,
   insertAgentTelemetry,
   insertTelemetryEvent
-} from "./chunk-JHYB5MLN.js";
-import {
-  getAgentPubkey
-} from "./chunk-OZL5FZ3S.js";
+} from "./chunk-UEOH474S.js";
 
 // src/lib/telemetry.ts
 var inMemoryTelemetryEvents = [];

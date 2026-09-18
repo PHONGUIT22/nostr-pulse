@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {
   normalizeRelayUrl
-} from "./chunk-ATKN57WH.js";
+} from "./chunk-PIGNIESQ.js";
 
 // src/lib/nwc.ts
 import { SimplePool } from "nostr-tools/pool";

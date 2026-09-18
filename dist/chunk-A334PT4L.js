@@ -313,6 +313,18 @@ var creators_default = [
     about: "https://nostr.directory find your favorite people on nostr.",
     nip05: "nostrdirectory@nostr.directory",
     lud16: "nostrdirectory@getalby.com"
+  },
+  {
+    name: "Satoshi Nakamoto",
+    handle: "satoshi",
+    npub: "npub1s4t0sh1nakamot0legendarynostrcreator9999999999999999999999",
+    pubkey: "964c78dd415b3c53cf7e4a1a36417fae4cc80c98f804595679fba11bce559ee7",
+    score: 99,
+    zapsReceived: "21.0M Sats",
+    picture: "https://image.nostr.build/839e5527a052be1d3870bb788220037a5495ae4fffa719e7dd5ec305fc6a7605.jpg",
+    about: "Chancellor on brink of second bailout for banks. Bitcoin & Sound Money.",
+    nip05: "satoshi@bitcoin.org",
+    lud16: "satoshi@getalby.com"
   }
 ];
 

@@ -13,7 +13,7 @@ import {
   recordZapEdge,
   upsertCreator,
   upsertTrustEdges
-} from "./chunk-JHYB5MLN.js";
+} from "./chunk-UEOH474S.js";
 
 // src/lib/indexer.ts
 import { SimplePool } from "nostr-tools/pool";
