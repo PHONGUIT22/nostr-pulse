@@ -32,15 +32,22 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
 
+# database
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+nostrpulse.db*
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.VSCodeCounters
 
-# local tool artifacts
-.gemini/
-*.db
-*.sqlite
+# nostrpulse local cache & agent identity
+.nostrpulse/

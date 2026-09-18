@@ -2,27 +2,28 @@
 
 # ⚡ nostr-pulse
 ### Sovereign Web-of-Trust Graph Engine, Sats-Weighted Anti-Sybil Defense & Full-Cycle Chaumian eCash Protocol Client
+**The Zero-Knowledge Reputation Matrix & Asynchronous eCash Settlement Layer for Nostr.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-9333EA?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Track](https://img.shields.io/badge/Track_2-Freedom_Stack-F7931A?style=for-the-badge&logo=bitcoin&logoColor=white)](https://bitshala.org)
 [![Web-of-Trust](https://img.shields.io/badge/Web--of--Trust-5%2C544_Ring--1_Nodes-8A2BE2?style=for-the-badge)](src/data/ring1-cache.json)
 [![Economic Stake](https://img.shields.io/badge/Anti--Sybil-Sats--Weighted_In--Degree-F7931A?style=for-the-badge&logo=bitcoin)](src/lib/economic-stake.ts)
-[![Nostr Protocol](https://img.shields.io/badge/Nostr-NIPs_Compliant-8A2BE2?style=for-the-badge&logo=nostr)](https://github.com/nostr-protocol/nips)
-[![Cashu Protocol](https://img.shields.io/badge/Cashu-NUTs_V4_eCash-00D084?style=for-the-badge)](https://cashu.space)
-[![Next.js 16](https://img.shields.io/badge/Next.js_16-App_Router-000000?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Chaumian eCash](https://img.shields.io/badge/Cashu-NIP--61_NutZaps-00D084?style=for-the-badge)](src/lib/cashu.ts)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![Track](https://img.shields.io/badge/BOSS_Battle-Track_2:_Freedom_Stack-E02424?style=for-the-badge&logo=target)](https://bitshala.org)
 
-<br />
+<p align="center">
+  <img src="assets/Demo.gif" alt="nostr-pulse Showcase" width="100%" />
+</p>
 
 <p align="center">
   <b>nostr-pulse</b> is an enterprise-grade analytics explorer, sovereign trust matrix, and full-cycle <b>NIP-61 Chaumian eCash (Cashu)</b> client built on the <b>Freedom Tech Stack</b> (Nostr + Bitcoin Lightning + Cashu eCash). It transforms raw cryptographic keypairs into verifiable, Sybil-resistant reputation metrics while enabling friction-free, offline Value-4-Value micro-settlements.
 </p>
 
 <p align="center">
-  <a href="https://nostr-pulse.vercel.app/"><b>🚀 Launch Live Explorer »</b></a> •
+  <a href="https://nostrpulse.vercel.app/"><b>🚀 Launch Live Explorer »</b></a> •
   <a href="#-happy-path-evaluation-guide-for-judges"><b>Evaluation Guide</b></a> •
   <a href="#-finished-vs-unfinished-matrix"><b>Finished vs. Unfinished</b></a> •
   <a href="#-clean-machine-setup--reproduction"><b>Local Setup</b></a> •
-  <a href="https://nostr-pulse.vercel.app/compare"><b>Versus Engine</b></a>
+  <a href="https://nostrpulse.vercel.app/compare"><b>Versus Engine</b></a>
 </p>
 
 </div>
@@ -35,9 +36,9 @@
 | :--- | :--- |
 | **Project Name** | **nostr-pulse** |
 | **Hackathon** | **BOSS Battle Hackathon** (Bitshala) |
-| **Submission Track** | **Track 2: Freedom Stack** |
+| **Submission Track** | **Track 2: Freedom Stack** *(with Machine Money AI Agent extensions)* |
 | **Team / Author** | **Nguyen Hac Phong** ([@PHONGUIT22](https://github.com/PHONGUIT22)) — *Solo Entry* |
-| **Live Web App** | [https://nostr-pulse.vercel.app](https://nostr-pulse.vercel.app) |
+| **Live Web App** | [https://nostrpulse.vercel.app](https://nostrpulse.vercel.app) |
 | **Source Repository** | [https://github.com/PHONGUIT22/nostr-pulse](https://github.com/PHONGUIT22/nostr-pulse) |
 | **License** | Open-source under the [MIT License](LICENSE) |
 
@@ -95,6 +96,11 @@ Standard Lightning Zaps (NIP-57) require real-time coordination. If a creator's 
 |     - Public Open API: CORS-enabled /api/v1/trust-score/[pubkey] for 3rd-party    |
 |       Nostr clients (Amethyst, Coracle, etc.)                                     |
 +-----------------------------------------------------------------------------------+
+|  5. MACHINE MONEY & AUTONOMOUS AGENT INTEGRATION (Convergence)                    |
+|     - Model Context Protocol (MCP) Server: Stdio JSON-RPC tools for AI agents     |
+|     - NIP-90 Open Work & AI DVM Marketplace: Decentralized task compute & bounty  |
+|     - Spending Guardrails: Rolling 24h limits & WoT-gated payment validation      |
++-----------------------------------------------------------------------------------+
 ```
 
 ---
@@ -104,19 +110,19 @@ Standard Lightning Zaps (NIP-57) require real-time coordination. If a creator's 
 You can evaluate the complete system without installing browser extensions or spending real money:
 
 ### Step 1: 1-Click Anti-Sybil Matrix Inspection
-1. Navigate to the **[nostr-pulse Homepage](https://nostr-pulse.vercel.app/)**.
+1. Navigate to the **[nostr-pulse Homepage](https://nostrpulse.vercel.app/)**.
 2. Immediately below the search bar, locate the **Live Interactive Demo** section.
-3. Click **🔥 Inspect Verified Builder** ([fiatjaf](https://nostr-pulse.vercel.app/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6)):
+3. Click **🔥 Inspect Verified Builder** ([fiatjaf](https://nostrpulse.vercel.app/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6)):
    - Observe the **95 pts** score with the emerald `Verified Builder` tier.
    - Inspect the **Hop 0: Core Root Anchor** cryptographic status (45/45 graph pts), verified NIP-05 DNS signature (`_@fiatjaf.com`), active Lightning endpoint, and network longevity.
-4. Click **⚠️ Inspect Sybil Bot Clone** ([anon_bot](https://nostr-pulse.vercel.app/p/anon_bot)):
+4. Click **⚠️ Inspect Sybil Bot Clone** ([anon_bot](https://nostrpulse.vercel.app/p/anon_bot)):
    - Observe how synthetic profile metadata (avatar, bio, external link) accumulated raw points.
    - Notice the **Anti-Sybil Gatekeeper Enforced**: because it has zero graph connectivity (`distance = 3`) and zero incoming WoT sats, its score is **strictly hard-capped at $\le$ 25 pts** (`Unverified / Potential Bot`, `Vulnerable` Sybil resistance), mathematically preventing metadata gaming.
 
 ---
 
 ### Step 2: Send a NIP-61 NutZap (Sender Pipeline)
-1. On any creator profile (e.g., [Jack](https://nostr-pulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)), scroll to the **Support Creator** card.
+1. On any creator profile (e.g., [Jack](https://nostrpulse.vercel.app/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m)), scroll to the **Support Creator** card.
 2. Switch payment tab to **Cashu eCash (NIP-61)**.
 3. Obtain a testnet Cashu token via either method:
    - **Method A (In-App 1-Click Mint):** Switch to **1-Click Mint**, select a satoshi amount (e.g. 21 Sats), and settle the testnet invoice.
@@ -148,7 +154,7 @@ You can evaluate the complete system without installing browser extensions or sp
    - nostr-pulse ships with a zero-dependency Vanilla JS embed script at `/widget.js`.
    - Any website, blog, or static creator page can embed eCash tipping with a single line:
      ```html
-     <script src="https://nostr-pulse.vercel.app/widget.js" data-npub="npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" data-name="fiatjaf" async></script>
+     <script src="https://nostrpulse.vercel.app/widget.js" data-npub="npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" data-name="fiatjaf" async></script>
      ```
    - Alternatively, use the custom Web Component:
      ```html
@@ -159,7 +165,7 @@ You can evaluate the complete system without installing browser extensions or sp
 2. **Test Public Open Reputation REST API:**
    - External Nostr clients (Amethyst, Coracle, Snort) can query the CORS-enabled trust endpoint directly for anti-spam filtering:
      ```bash
-     curl -s https://nostr-pulse.vercel.app/api/v1/trust-score/3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d
+     curl -s https://nostrpulse.vercel.app/api/v1/trust-score/3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d
      ```
    - Returns structured JSON containing `score`, `tier`, `wot.distance`, `wot.endorsers_count`, `economic_stake.total_valid_sats`, and `sybil_resistance_level`.
 
@@ -185,9 +191,42 @@ We believe in radical transparency regarding what was built and tested during th
 | **Dual Network Engine (Fast vs Pure P2P)** | **Finished** | Global navbar toggle switching between Primal Edge cache and 100% direct WebSocket connections via `SimplePool`. |
 | **Head-to-Head Compare Arena** | **Finished** | Side-by-side identity and trust matrix comparison at `/compare`. |
 | **Relay Telemetry Monitor** | **Finished** | Live latency and WebSocket connection health dashboard across decentralized relays at `/relays`. |
+| **Model Context Protocol (MCP) Server** | **Finished** | Full Stdio MCP server (`mcp-entry.ts`) exposing 8 tools for AI agent payment, identity, and trust verification. |
+| **NIP-90 Open Work / DVM Marketplace** | **Finished** | Task bounty board at `/bounties` with Kind 5000 request publishing, feedback streams, and eCash payout settlement. |
+| **Autonomous Spending Guardrails** | **Finished** | Rolling 24h budget limits, per-tx caps, and WoT trust-score gatekeeping protecting agent balances. |
 | **NUT-11 P2PK Recipient Locks** | *Scoped Next* | Mint-enforced recipient public key locks for eCash proofs; awaiting widespread testnet mint deployment. |
 | **Automated Auto-Melt Liquidity Service** | *Scoped Next* | Threshold-based auto-swapping from accumulated eCash tokens into native Lightning node balance. |
-| **NIP-90 Data Vending Machine Agent Settlement** | *Scoped Next* | Autonomous machine-to-machine reputation verifications and micro-settlements. |
+
+---
+
+## 🤖 Bonus Convergence: Machine Money & AI Agents
+
+Beyond human users, nostr-pulse natively powers autonomous software agents with the same Freedom Tech primitives:
+
+### 1. Zero-Config Agent Identity
+Autonomous agents generate their own cryptographic `secp256k1` keypairs (`npub` / `nsec`) locally via [`src/lib/identity-manager.ts`](src/lib/identity-manager.ts). No credit cards, phone numbers, or corporate credentials required.
+
+### 2. Model Context Protocol (MCP) Server
+Any LLM (Claude Desktop, Cursor IDE, Windsurf) can connect to nostr-pulse using standard Stdio JSON-RPC:
+```json
+{
+  "mcpServers": {
+    "nostrpulse": {
+      "command": "npx",
+      "args": ["-y", "nostrpulse-mcp"]
+    }
+  }
+}
+```
+
+### 3. NIP-90 Open Work & AI DVM Marketplace
+Agents and human builders buy and sell computational labor, data analysis, and reputation audits at [`/bounties`](https://nostrpulse.vercel.app/bounties) using Kind 5000 job requests and Kind 6000 deliverables settled via sats.
+
+### 4. Spending Guardrails & Radar Defense
+To prevent infinite-loop spending or prompt injection attacks from draining agent funds, [`src/lib/spending-guardrails.ts`](src/lib/spending-guardrails.ts) enforces:
+* Configurable rolling 24-hour satoshi spending budgets.
+* Maximum satoshis per individual transaction.
+* Mandatory Web-of-Trust reputation threshold gatekeeping before releasing funds to counterparties.
 
 ---
 
@@ -241,10 +280,11 @@ nostr-pulse strictly adheres to open specifications across both the Nostr and Ca
 | **NIP-07** | Client Signer | Browser extension signing interface (`window.nostr`) | ✅ Fully Supported |
 | **NIP-19** | Entities | Bech32 entity encoding/decoding (`npub`, `note`, `nprofile`) | ✅ Fully Supported |
 | **NIP-44 v2** | Privacy | ChaCha20-Poly1305 authenticated end-to-end encryption | ✅ Fully Supported |
+| **NIP-47** | Lightning | Nostr Wallet Connect (NWC) automated payment dispatch for AI agents | ✅ Fully Supported |
 | **NIP-57** | Lightning | Synchronous Lightning Zaps (Kind 9734 request & Kind 9735 receipt) | ✅ Fully Supported |
 | **NIP-60 / NIP-61** | Chaumian eCash | Asynchronous NutZaps via Kind 9321 events & standalone `widget.js` | ✅ Fully Supported |
 | **NIP-65** | Routing | Relay List Metadata (Kind 10002) for dynamic outbox routing | ✅ Fully Supported |
-| **NIP-89 / NIP-90** | App / DVM | Open reputation schema & computational data provider standards (`/api/v1`) | ✅ Fully Supported |
+| **NIP-89 / NIP-90** | App / DVM | Open reputation schema & computational data provider standards (`/api/v1`, `/bounties`) | ✅ Fully Supported |
 | **NUT-00** | Cashu Tokens | V3 JSON (`cashuA`) and V4 binary CBOR (`cashuB`) specifications | ✅ Fully Supported |
 | **NUT-02** | Cashu Mint | Keyset ID discovery and status endpoints (`/v1/keysets`) | ✅ Fully Supported |
 | **NUT-03** | Cashu Swap | Token swapping and proof exchange for recipient ownership | ✅ Fully Supported |
@@ -263,10 +303,13 @@ nostr-pulse/
 │   ├── app/
 │   │   ├── page.tsx                 # Homepage with Live Interactive Demo
 │   │   ├── p/[npub]/page.tsx        # Profile dashboard, Trust Score breakdown, NutZap Inbox
+│   │   ├── bounties/page.tsx        # NIP-90 Open Work & AI DVM Marketplace
+│   │   ├── agent/page.tsx           # Autonomous AI Agent Dashboard
 │   │   ├── compare/page.tsx         # Head-to-Head Creator Versus arena
 │   │   ├── relays/page.tsx          # Real-time WebSocket relay latency monitor
 │   │   └── api/
 │   │       ├── badge/[npub]/        # Dynamic SVG reputation badge generator
+│   │       ├── bounties/            # Server-side NIP-90 open task fetcher
 │   │       ├── v1/trust-score/      # Public open REST API for external clients
 │   │       └── widget/              # Backend quote & claim routes for widget.js
 │   ├── components/
@@ -277,21 +320,27 @@ nostr-pulse/
 │   │   │   ├── LightningZapCard.tsx # Dual-rail payment card (Lightning + Cashu)
 │   │   │   ├── LiveZapFeed.tsx      # Real-time WebSocket streaming Kind 9735 receipts
 │   │   │   └── TrustScoreCard.tsx   # 5-Pillar matrix & Anti-Sybil gatekeeper indicator
+│   │   ├── bounty/
+│   │   │   ├── BountyCard.tsx       # NIP-90 Task card with creator trust badge
+│   │   │   └── CreateBountyModal.tsx# Post Kind 5000 job requests with sats bid
 │   │   └── layout/
 │   │       └── Navbar.tsx           # Global navigation with network mode toggle
 │   ├── data/
 │   │   └── ring1-cache.json         # 5,544 pre-computed Ring-1 nodes snapshot
-│   └── lib/
-│       ├── anchors.ts               # 21 curated Root Anchors registry across 4 tiers
-│       ├── wot.ts                   # Web-of-Trust graph distance resolver
-│       ├── economic-stake.ts        # Sats-weighted in-degree & wash trading defense
-│       ├── cashu.ts                 # Zero-dep CBOR decoder, NutZap engine, Keyset resolution
-│       ├── trust-score.ts           # 5-Pillar scoring matrix & Anti-Sybil Gatekeeper guard
-│       ├── nip05.ts                 # Cryptographic DNS record verification
-│       ├── network-mode.ts          # State manager: Fast Cache vs. Pure P2P
-│       └── nostr.ts                 # SimplePool relay manager, NIP-19 decoders
+│   ├── lib/
+│   │   ├── anchors.ts               # 21 curated Root Anchors registry across 4 tiers
+│   │   ├── wot.ts                   # Web-of-Trust graph distance resolver
+│   │   ├── economic-stake.ts        # Sats-weighted in-degree & wash trading defense
+│   │   ├── cashu.ts                 # Zero-dep CBOR decoder, NutZap engine, Keyset resolution
+│   │   ├── trust-score.ts           # 5-Pillar scoring matrix & Anti-Sybil Gatekeeper guard
+│   │   ├── nip05.ts                 # Cryptographic DNS record verification
+│   │   ├── nip90.ts                 # NIP-90 DVM client & subscription manager
+│   │   ├── identity-manager.ts      # Zero-config autonomous agent keypair manager
+│   │   ├── spending-guardrails.ts   # AI Agent spending limits & policy engine
+│   │   └── nostr.ts                 # SimplePool relay manager, NIP-19 decoders
+│   └── mcp-entry.ts                 # Stdio Model Context Protocol (MCP) server
 ├── docs/
-│   └── DEVFOLIO_SUBMISSION.md       # Hackathon narrative copy
+│   └── DEVFOLIO_SUBMISSION.md       # Devfolio submission copy (sanitized fields)
 └── PRODUCT.md                       # Impeccable durable product register
 ```
 

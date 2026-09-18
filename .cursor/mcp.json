@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "nostrpulse": {
+      "command": "npx",
+      "args": ["-y", "nostrpulse-mcp"]
+    }
+  }
+}
