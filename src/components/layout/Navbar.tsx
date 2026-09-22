@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Key, Scale, Loader2, Zap, Bot, Cpu } from "lucide-react";
+import { Search, Key, Loader2, Zap, Bot, Cpu } from "lucide-react";
 import { resolveNostrSearch } from "@/lib/search";
 import NostrLoginButton from "@/components/layout/NostrLoginButton";
 import ConnectMcpModal from "@/components/mcp/ConnectMcpModal";
@@ -31,7 +31,7 @@ export default function Navbar() {
 
   return (
     <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3 sm:gap-4">
         
         {/* Left logo: NostrPulse */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
@@ -43,8 +43,8 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* THANH SEARCH NPUB */}
-        <form onSubmit={handleSearch} className="flex-1 max-w-md mx-2 sm:mx-6">
+        {/* Flexible Search Bar */}
+        <form onSubmit={handleSearch} className="flex-1 max-w-xs sm:max-w-sm min-w-[140px] mx-2 sm:mx-4">
           <div className="relative flex items-center">
             <Key className="w-4 h-4 text-purple-600 absolute left-3.5 pointer-events-none" />
             <input
@@ -64,18 +64,14 @@ export default function Navbar() {
           </div>
         </form>
 
-        {/* Right navigation links & NIP-07 login */}
-        <div className="flex items-center gap-3 shrink-0">
-          <nav className="hidden lg:flex items-center gap-6 font-medium text-slate-600 text-sm mr-2">
-            <Link href="/agent" className="hover:text-emerald-600 text-emerald-700 font-bold transition-colors flex items-center gap-1.5">
-              <Bot className="w-3.5 h-3.5 text-emerald-600" />
-              Machine Money
-            </Link>
-            <Link href="/relays" className="hover:text-slate-900 transition-colors">
-              Relay Explorer
-            </Link>
-            <Link href="/bounties" className="hover:text-slate-900 transition-colors">
+        {/* Right navigation links & action buttons */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-6 font-medium text-slate-600 text-sm mr-1 xl:mr-2">
+            <Link href="/bounties" className="hover:text-purple-600 transition-colors">
               Bounties
+            </Link>
+            <Link href="/compare" className="hover:text-purple-600 transition-colors">
+              Compare
             </Link>
             <Link href="/about" className="hover:text-slate-900 transition-colors">
               Methodology
@@ -95,30 +91,25 @@ export default function Navbar() {
             <span className="font-mono text-[11px] sm:text-xs font-bold">5/5 Relays (P2P)</span>
           </Link>
 
+          {/* Connect MCP Modal Trigger */}
           <button
             type="button"
             onClick={() => setIsMcpModalOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full transition-all text-xs sm:text-sm border border-slate-700 shadow-xs cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full transition-all text-xs sm:text-sm border border-slate-700 shadow-xs cursor-pointer"
             title="Connect MCP to Cursor or Claude Desktop"
           >
             <Cpu className="w-4 h-4 text-emerald-400" />
-            <span className="hidden md:inline">Connect</span> MCP
+            <span className="hidden xl:inline">Connect </span>MCP
           </button>
 
+          {/* Machine Money Button */}
           <Link
             href="/agent"
-            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full transition-all text-xs sm:text-sm border border-emerald-200 shadow-xs flex items-center gap-1.5"
+            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full transition-all text-xs sm:text-sm border border-emerald-200 shadow-xs flex items-center gap-1.5 cursor-pointer"
+            title="Autonomous AI Agent & Machine Money Runtime"
           >
             <Bot className="w-4 h-4 text-emerald-600" />
-            <span className="hidden sm:inline">AI Agent</span>
-          </Link>
-
-          <Link
-            href="/compare"
-            className="bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full transition-all text-xs sm:text-sm border border-purple-200 shadow-xs flex items-center gap-1.5"
-          >
-            <Scale className="w-4 h-4" />
-            <span className="hidden sm:inline">Compare</span>
+            <span className="hidden md:inline">Machine Money</span>
           </Link>
 
           {/* NIP-07 Login button */}
