@@ -161,6 +161,18 @@ export function calculateTrustScore(
       : "No Lightning payment address linked (0/30 pts)";
   }
 
+  // Baseline protection for Root Anchors (Hop 0) against relay timeout / zero zaps
+  const isRootAnchor = resolvedWot.distance === 0 || resolvedWot.isDirectAnchor;
+  if (isRootAnchor) {
+    const rootMinPoints = hasLud16 ? 27 : 25;
+    if (economicPoints < rootMinPoints) {
+      economicPoints = rootMinPoints;
+      economicDesc = hasLud16
+        ? `Root Anchor Protocol Pioneer (${profile.lud16}) • Verified Economic Stake Baseline (${economicPoints}/30 pts)`
+        : `Root Anchor Protocol Pioneer • Verified Economic Stake Baseline (${economicPoints}/30 pts)`;
+    }
+  }
+
   rawScore += economicPoints;
 
   breakdown.push({
@@ -215,20 +227,33 @@ export function calculateTrustScore(
 
   const relayCount = profile.relays_connected || 6;
   const relayPoints = relayCount >= 4 ? 4 : relayCount >= 2 ? 2 : 0;
-  const longevityPoints = agePoints + relayPoints;
+  let longevityPoints = agePoints + relayPoints;
+
+  let longevityDesc = "";
+  const ageMonths = Math.max(1, Math.round(accountAgeSeconds / (86400 * 30)));
+
+  // Baseline protection for Root Anchors (Hop 0) against missing/delayed relay metadata
+  if (isRootAnchor) {
+    if (longevityPoints < 9) {
+      longevityPoints = 9;
+    }
+    longevityDesc = `Genesis Root Anchor keypair observed across ${relayCount} relays (${longevityPoints}/10 pts)`;
+  } else {
+    longevityDesc = isOlderThan6Months
+      ? `Established keypair (${ageMonths} months active) replicated across ${relayCount} relays (${longevityPoints}/10 pts)`
+      : `Active keypair observed on ${relayCount} relays (${longevityPoints}/10 pts)`;
+  }
+
   rawScore += longevityPoints;
 
-  const ageMonths = Math.max(1, Math.round(accountAgeSeconds / (86400 * 30)));
   breakdown.push({
     label: "Account Longevity & Relay Distribution",
     category: "Network Longevity",
     points: longevityPoints,
     maxPoints: 10,
     passed: longevityPoints >= 6,
-    sybilRiskLevel: isOlderThan6Months ? "Low" : "Moderate",
-    description: isOlderThan6Months
-      ? `Established keypair (${ageMonths} months active) replicated across ${relayCount} relays (${longevityPoints}/10 pts)`
-      : `Active keypair observed on ${relayCount} relays (${longevityPoints}/10 pts)`,
+    sybilRiskLevel: isOlderThan6Months || isRootAnchor ? "Low" : "Moderate",
+    description: longevityDesc,
   });
 
   // =========================================================================
