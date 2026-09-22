@@ -105,26 +105,35 @@ export default function AgentModeContainer() {
       {/* Mode Content Rendering */}
       {activeMode === "interactive" ? (
         <div className="space-y-8 animate-in fade-in duration-300">
-          {/* Connect MCP Server Banner */}
-          <ConnectMcpCard />
-
           {/* Machine Spender Bot Component */}
           <MachineSpenderBot />
+
+          {/* Anti-Prompt Injection & Spend Guardrail Playground (Rubric Slide 10 & 8) */}
+          <div id="guardrail-playground" className="pt-2">
+            <GuardrailPlayground />
+          </div>
+
+          {/* Connect MCP Server Banner */}
+          <div className="pt-2">
+            <ConnectMcpCard />
+          </div>
         </div>
       ) : (
         <div className="space-y-8 animate-in fade-in duration-300">
           {/* Autonomous Headless Agent Terminal Dashboard */}
           <AutonomousAgentTerminal />
 
-          {/* Connect MCP Server Banner */}
-          <ConnectMcpCard />
+          {/* Anti-Prompt Injection & Spend Guardrail Playground (Rubric Slide 10 & 8) */}
+          <div id="guardrail-playground" className="pt-2">
+            <GuardrailPlayground />
+          </div>
+
+          {/* Connect MCP Server Banner at the bottom */}
+          <div className="pt-2">
+            <ConnectMcpCard />
+          </div>
         </div>
       )}
-
-      {/* Anti-Prompt Injection & Spend Guardrail Playground (Rubric Slide 10 & 8) */}
-      <div id="guardrail-playground" className="pt-2">
-        <GuardrailPlayground />
-      </div>
     </div>
   );
 }
