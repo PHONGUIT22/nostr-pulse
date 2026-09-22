@@ -13,17 +13,20 @@ import {
   SlidersHorizontal,
   Sparkles,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import BountyCard from "@/components/bounty/BountyCard";
 import CreateBountyModal from "@/components/bounty/CreateBountyModal";
+import SpotlightBountyCard from "@/components/bounty/SpotlightBountyCard";
 import { fetchOpenBounties, OpenBountyTask } from "@/lib/nip90";
 import { fetchNostrProfile, calculateTrustScore, TrustScoreResult, NostrProfile } from "@/lib/trust-score";
 
 type TrustFilterMode = "all" | "anti-spam" | "active" | "verified";
+type CategoryFilterMode = "all" | "ai-inference";
 
 export default function BountiesPage() {
   const [tasks, setTasks] = useState<OpenBountyTask[]>([]);
@@ -34,6 +37,7 @@ export default function BountiesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [trustFilter, setTrustFilter] = useState<TrustFilterMode>("all");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterMode>("all");
   const [minBid, setMinBid] = useState<number>(0);
   const [recentlyAddedId, setRecentlyAddedId] = useState<string | null>(null);
 
@@ -127,7 +131,27 @@ export default function BountiesPage() {
         return false;
       }
 
-      // 3. Trust Score Anti-Spam Filter
+      // 3. Category Filter (AI Inference - Problem Board Slide 7)
+      if (categoryFilter === "ai-inference") {
+        const cat = (task.category || "").toLowerCase();
+        const prompt = (task.prompt || "").toLowerCase();
+        const isAi =
+          cat.includes("ai") ||
+          cat.includes("inference") ||
+          cat.includes("text") ||
+          cat.includes("summary") ||
+          cat.includes("dvm") ||
+          prompt.includes("llm") ||
+          prompt.includes("model") ||
+          prompt.includes("inference") ||
+          prompt.includes("sentiment") ||
+          prompt.includes("ai");
+        if (!isAi) {
+          return false;
+        }
+      }
+
+      // 4. Trust Score Anti-Spam Filter
       const scoreObj = creatorScores[task.pubkey];
       const score = scoreObj ? scoreObj.score : 5; // Default unverified score
 
@@ -143,7 +167,7 @@ export default function BountiesPage() {
 
       return true;
     });
-  }, [tasks, searchQuery, trustFilter, minBid, creatorScores]);
+  }, [tasks, searchQuery, trustFilter, minBid, categoryFilter, creatorScores]);
 
   // Aggregate statistics
   const totalSatsPool = tasks.reduce((acc, t) => acc + (t.bidSats || 0), 0);
@@ -253,58 +277,81 @@ export default function BountiesPage() {
             </div>
           </div>
 
-          {/* Trust Score Anti-Spam Tabs */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
-            <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-              Reputation Filter:
-            </span>
+          {/* Trust Score Anti-Spam Tabs & AI Inference Quick Filter */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                Reputation Filter:
+              </span>
 
+              <button
+                onClick={() => setTrustFilter("all")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  trustFilter === "all"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                }`}
+              >
+                All Tasks ({tasks.length})
+              </button>
+
+              <button
+                onClick={() => setTrustFilter("anti-spam")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  trustFilter === "anti-spam"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                }`}
+              >
+                <span>Anti-Spam Filter (Score ≥ 20)</span>
+              </button>
+
+              <button
+                onClick={() => setTrustFilter("active")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  trustFilter === "active"
+                    ? "bg-amber-500 text-white shadow-xs"
+                    : "bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200"
+                }`}
+              >
+                <span>Active Contributors (≥ 50)</span>
+              </button>
+
+              <button
+                onClick={() => setTrustFilter("verified")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  trustFilter === "verified"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200"
+                }`}
+              >
+                <span>Verified Builders (≥ 80)</span>
+              </button>
+            </div>
+
+            {/* Quick Filter: AI Inference Tasks (Problem Board Slide 7) */}
             <button
-              onClick={() => setTrustFilter("all")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                trustFilter === "all"
-                  ? "bg-purple-600 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+              onClick={() => setCategoryFilter((prev) => (prev === "ai-inference" ? "all" : "ai-inference"))}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+                categoryFilter === "ai-inference"
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md ring-2 ring-purple-400/50"
+                  : "bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200"
               }`}
             >
-              All Tasks ({tasks.length})
-            </button>
-
-            <button
-              onClick={() => setTrustFilter("anti-spam")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                trustFilter === "anti-spam"
-                  ? "bg-purple-600 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-600"
-              }`}
-            >
-              <span>Anti-Spam Filter (Score ≥ 20)</span>
-            </button>
-
-            <button
-              onClick={() => setTrustFilter("active")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                trustFilter === "active"
-                  ? "bg-amber-500 text-white shadow-xs"
-                  : "bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200"
-              }`}
-            >
-              <span>Active Contributors (≥ 50)</span>
-            </button>
-
-            <button
-              onClick={() => setTrustFilter("verified")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                trustFilter === "verified"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200"
-              }`}
-            >
-              <span>Verified Builders (≥ 80)</span>
+              <Bot className="w-4 h-4 text-purple-500" />
+              <span>🤖 AI Inference Tasks (Slide 7)</span>
+              {categoryFilter === "ai-inference" && (
+                <span className="text-[10px] bg-white/25 text-white px-2 py-0.5 rounded-full font-mono">
+                  Filtered
+                </span>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Pinned Spotlight Task Card: Bitshala Problem Board (Slide 7) */}
+        <SpotlightBountyCard />
 
         {/* Recently Added Banner */}
         {recentlyAddedId && (
