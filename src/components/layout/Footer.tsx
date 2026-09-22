@@ -37,7 +37,18 @@ export default function Footer() {
               <li><Link href="/relays" className="hover:text-white transition-colors">Relay Explorer</Link></li>
               <li><Link href="/compare" className="hover:text-white transition-colors">Compare Nostr Profiles</Link></li>
               <li><Link href="/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" className="hover:text-white transition-colors">fiatjaf Profile</Link></li>
-              <li><Link href="/p/npub1sg6plzptd64u62a978hep2k2u72xqvvd5299cvfd0rrxn5z5avqss2ydmd" className="hover:text-white transition-colors">Jack Dorsey Profile</Link></li>
+              <li><Link href="/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m" className="hover:text-white transition-colors">Jack Dorsey Profile</Link></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Machine Money & Freedom Tech */}
+          <div>
+            <h4 className="text-white font-semibold mb-4 text-xs uppercase tracking-wider">Machine Money</h4>
+            <ul className="space-y-2.5 text-xs">
+              <li><Link href="/agent" className="hover:text-emerald-400 text-emerald-300 font-semibold transition-colors">AI Autonomous Agent</Link></li>
+              <li><Link href="/bounties" className="hover:text-purple-400 text-purple-300 font-semibold transition-colors">NIP-90 Open Work & DVMs</Link></li>
+              <li><a href="https://www.npmjs.com/package/nostrpulse-mcp" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">nostrpulse-mcp (npm v1.2.0)</a></li>
+              <li><a href="https://github.com/PHONGUIT22/nostr-pulse" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Source Code (GitHub)</a></li>
             </ul>
           </div>
 
@@ -47,7 +58,7 @@ export default function Footer() {
         <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 mb-8 leading-relaxed flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
           <div>
-            <strong>Disclaimer:</strong>NostrPulse is an independent explorer built on open Nostr protocols (NIPs) and the Bitcoin Lightning Network. We do not hold private keys or custody user funds.
+            <strong>Disclaimer:</strong> NostrPulse is an independent explorer built on open Nostr protocols (NIPs) and the Bitcoin Lightning Network. We do not hold private keys or custody user funds.
           </div>
         </div>
 

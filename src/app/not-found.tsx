@@ -99,7 +99,7 @@ export default function NotFound() {
           <div className="text-xs text-slate-500 flex items-center justify-center gap-2 flex-wrap">
             <span>Or explore top creators:</span>
             <Link href="/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" className="font-semibold text-slate-700 hover:text-purple-600 underline">fiatjaf</Link> •
-            <Link href="/p/npub1sg6plzptd64u62a978hep2k2u72xqvvd5299cvfd0rrxn5z5avqss2ydmd" className="font-semibold text-slate-700 hover:text-purple-600 underline">Jack Dorsey</Link> •
+            <Link href="/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m" className="font-semibold text-slate-700 hover:text-purple-600 underline">Jack Dorsey</Link> •
             <Link href="/p/npub1qny3tkh0xuz24ldrzct50hn5fhqr5t0m8w27j2pn4nqvmmv030eqtewvm4" className="font-semibold text-slate-700 hover:text-purple-600 underline">NVK</Link> •
             <Link href="/p/npub1a2cww4kn9wqte4pw70vjdjzhctrnvkfdln9ecc5422kqaeayikrqqf2la6" className="font-semibold text-slate-700 hover:text-purple-600 underline">Lyn Alden</Link>
           </div>

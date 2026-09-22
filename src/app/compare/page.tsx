@@ -59,7 +59,7 @@ export default function CompareHubPage() {
   const POPULAR_MATCHUPS = [
     {
       c1: creators[0] || { name: "fiatjaf", handle: "fiatjaf", npub: "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" },
-      c2: creators[1] || { name: "Jack Dorsey", handle: "jack", npub: "npub1sg6plzptd64u62a978hep2k2u72xqvvd5299cvfd0rrxn5z5avqssae6r6m" },
+      c2: creators[1] || { name: "Jack Dorsey", handle: "jack", npub: "npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m" },
       tag: "Protocol Founders",
     },
     {
