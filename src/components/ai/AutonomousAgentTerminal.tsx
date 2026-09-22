@@ -239,12 +239,13 @@ export default function AutonomousAgentTerminal() {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [copiedCli, setCopiedCli] = useState(false);
   const [filterMode, setFilterMode] = useState<"all" | "rpc" | "errors">("all");
-  const terminalBottomRef = useRef<HTMLDivElement>(null);
+  const terminalContainerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<boolean>(false);
 
+  // Auto-scroll inside terminal container only (never hijacks window scroll position)
   const scrollToBottom = useCallback(() => {
-    if (terminalBottomRef.current) {
-      terminalBottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (terminalContainerRef.current) {
+      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
     }
   }, []);
 
@@ -304,7 +305,9 @@ export default function AutonomousAgentTerminal() {
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (logs.length > 0) {
+      scrollToBottom();
+    }
   }, [logs, scrollToBottom]);
 
   const filteredLogs = logs.filter((log) => {
@@ -528,7 +531,10 @@ export default function AutonomousAgentTerminal() {
         </div>
 
         {/* Terminal Screen View */}
-        <div className="p-4 sm:p-6 font-mono text-xs text-slate-300 min-h-[420px] max-h-[580px] overflow-y-auto space-y-2.5 bg-slate-950/95 scrollbar-thin scrollbar-thumb-slate-800">
+        <div 
+          ref={terminalContainerRef}
+          className="p-4 sm:p-6 font-mono text-xs text-slate-300 min-h-[420px] max-h-[580px] overflow-y-auto space-y-2.5 bg-slate-950/95 scrollbar-thin scrollbar-thumb-slate-800"
+        >
           {logs.length === 0 ? (
             <div className="py-16 text-center space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
@@ -604,7 +610,6 @@ export default function AutonomousAgentTerminal() {
               </div>
             ))
           )}
-          <div ref={terminalBottomRef} />
         </div>
 
         {/* Terminal Footer Telemetry */}

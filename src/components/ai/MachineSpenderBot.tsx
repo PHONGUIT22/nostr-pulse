@@ -83,7 +83,7 @@ export default function MachineSpenderBot() {
 
   // Chat Input State
   const [input, setInput] = useState<string>("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
 
   // Vercel AI SDK Transport with dynamic token resolution and local model routing
@@ -126,9 +126,11 @@ export default function MachineSpenderBot() {
     }
   }, [cashuToken]);
 
-  // Auto-scroll to bottom of messages
+  // Auto-scroll to bottom of messages within chat container only (preventing page window hijack)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0 && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [messages, status]);
 
   // Form submission handler
@@ -385,7 +387,7 @@ export default function MachineSpenderBot() {
         </div>
 
         {/* Message Feed */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {/* Welcome Placeholder */}
           {messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
@@ -824,8 +826,6 @@ export default function MachineSpenderBot() {
               </div>
             </div>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Chat Input Bar */}
