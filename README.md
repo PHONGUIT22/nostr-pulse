@@ -345,6 +345,43 @@ Paste this into your `.cursor/mcp.json` or `claude_desktop_config.json`:
 
 ---
 
+### 🎯 Problem Board Alignment: Democratizing AI Usage (Track 02, Slide 7)
+
+> *"Democratizing AI Usage: Pay in sats or ecash to host and access open-source model inference, with privacy on both sides of the trade."* — **Bitshala BOSS Battle Problem Board (Slide 7)**
+
+#### The Two-Sided Privacy Dilemma in Machine Intelligence
+Commercial AI inference APIs (OpenAI, Anthropic, AWS Bedrock) enforce invasive KYC: credit card verification, real-name accounts, phone numbers, IP address logging, and prompt retention. Conversely, naive on-chain crypto payment schemes permanently dox the requester's public wallet address and connect every computational query to a permanent public ledger.
+
+#### NostrPulse's Solution: Dual-Blind NIP-90 DVM + NIP-61 eCash NutZap Architecture
+NostrPulse directly answers Problem Statement 1 by creating a non-custodial, two-sided privacy marketplace for open-source AI inference on the **Freedom Tech Stack**:
+
+```text
++-----------------------------------------------------------------------------------------------+
+|                       TWO-SIDED PRIVACY AI INFERENCE PROTOCOL FLOW                           |
++-----------------------------------------------------------------------------------------------+
+|  1. BLIND ACCESS (Requester Side Privacy)                                                     |
+|     - Requester publishes NIP-90 Kind 5000 Job Request with prompt payload (optional NIP-44)   |
+|     - Zero KYC, zero credit card, zero API account required                                  |
+|     - Payout committed in Chaumian eCash (Cashu NutZap, Kind 9321)                            |
+|                                                                                               |
+|  2. BLIND HOSTING (Worker Side Privacy)                                                       |
+|     - Open-source DVM nodes host local models (LLaMA 3, Mistral, Gemma)                       |
+|     - Worker subscribes to Kind 5000 requests on open Nostr relays (no public IP required)   |
+|     - Worker signs Kind 6000 Job Result with computed inference output                        |
+|                                                                                               |
+|  3. UNLINKABLE VALUE SETTLEMENT (NUT-07 Chaumian Blind Signatures)                            |
+|     - Requester verifies Kind 6000 result against anti-Sybil WoT reputation (> 40 score)      |
+|     - Requester releases 5 sats of Chaumian eCash bearer tokens to the DVM worker             |
+|     - Mint cannot link bearer proofs to requester identity or original prompt                 |
++-----------------------------------------------------------------------------------------------+
+```
+
+1. **Blind Access (Requester Privacy):** Requesters access open-source inference without accounts, subscriptions, or credit cards. Prompts can be encrypted with NIP-44 v2, ensuring relay operators cannot inspect private queries.
+2. **Blind Hosting (Worker Privacy):** Home miners and open-source model operators can monetize idle GPU compute without registering merchant accounts or exposing IP addresses.
+3. **Genuine Crossover (Slide 8 Compliance):** Machine Money is not an afterthought or bolted-on tip button. NostrPulse's Model Context Protocol (MCP) server combines **autonomous spending guardrails** (rolling 24h budget + per-tx limits), **anti-Sybil WoT reputation gating** (< 40 score blocked), and **NIP-90 computational bounties** into a unified, hardened financial runtime for autonomous agents.
+
+---
+
 ## 📜 Protocol Specifications (NIPs, NUTs & MCP)
 
 | Specification | Layer | Standard Description | Implementation Status |
