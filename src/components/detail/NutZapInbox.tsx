@@ -63,7 +63,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
 
   // Claim states indexed by event ID
   const [claimingMap, setClaimingMap] = useState<Record<string, boolean>>({});
-  const [claimResultMap, setClaimResultMap] = useState<Record<string, { success: boolean; amount?: number; newToken?: string; error?: string }>>({});
+  const [claimResultMap, setClaimResultMap] = useState<Record<string, { success: boolean; amount?: number; amountSats?: number; newToken?: string; error?: string }>>({});
 
   // Copied token indicator
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -71,6 +71,7 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
 
   // QR code visibility per event
   const [qrVisibleMap, setQrVisibleMap] = useState<Record<string, boolean>>({});
+  const [freshQrVisibleMap, setFreshQrVisibleMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -290,11 +291,11 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
     }
   };
 
-  const handleCopyToken = (text: string, id: string) => {
+  const handleCopyToken = (text: string, id: string, customFeedback?: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(text);
       setCopiedId(id);
-      setCopyFeedback("Copied! Import into Minibits, Macadamia, or Cashu.me");
+      setCopyFeedback(customFeedback || "Copied! Import into Minibits, Macadamia, or Cashu.me");
       setTimeout(() => {
         setCopiedId(null);
         setCopyFeedback(null);
@@ -328,10 +329,13 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
             <Coins className="w-5 h-5 fill-emerald-400" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-bold text-sm text-slate-200">Incoming eCash NutZaps</h3>
               <span className="bg-purple-950/80 border border-purple-800 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 NIP-61
+              </span>
+              <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                🟢 5 Relays Active | Fail-Closed NUT-07
               </span>
               <span className="bg-emerald-950/80 border border-emerald-700 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Reviewer Mode Ready
@@ -371,6 +375,9 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
               <h3 className="font-black text-lg sm:text-xl">Incoming eCash NutZaps</h3>
               <span className="bg-purple-950/80 border border-purple-800 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-purple-400" /> NIP-61 Receiver
+              </span>
+              <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                🟢 5 Relays Active | Fail-Closed NUT-07
               </span>
               {isOwnProfile ? (
                 <span className="bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -693,8 +700,115 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                       )}
                     </div>
 
+                    {/* Dedicated High-Visibility "Fresh eCash Swapped & Secured" Banner */}
+                    {claimResult?.success && claimResult.newToken && (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-950/80 via-slate-900 to-slate-950 border-2 border-emerald-500/80 text-slate-200 space-y-3.5 shadow-xl shadow-emerald-950/40 animate-in fade-in duration-300">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/60 text-emerald-300 text-xs font-bold shadow-xs">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>🟢 Fresh Proofs Held Locally (NUT-03 Swapped)</span>
+                          </div>
+                          <span className="text-xs font-mono font-bold text-emerald-300 bg-emerald-900/60 px-2.5 py-1 rounded-lg border border-emerald-600/50">
+                            +{(claimResult.amountSats || claimResult.amount || dec.amount).toLocaleString()} Sats Secured
+                          </span>
+                        </div>
+
+                        <div className="space-y-1">
+                          <h4 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-emerald-400 fill-emerald-400" />
+                            Fresh eCash Swapped & Secured
+                          </h4>
+                          <p className="text-xs text-slate-300 leading-relaxed font-normal">
+                            Sender&apos;s token has been permanently invalidated at the Mint and swapped into brand-new bearer proofs held in your browser session. Export or spend these fresh sats into external Cashu wallets below:
+                          </p>
+                        </div>
+
+                        {/* Action Buttons Row */}
+                        <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                          {/* Action Button 1 (Copy) */}
+                          <button
+                            type="button"
+                            onClick={() => handleCopyToken(claimResult.newToken!, event.id, "Copied! Ready to paste into Minibits / Cashu.me")}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-300 hover:text-emerald-200 border border-emerald-500/40 hover:border-emerald-400 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-sm active:scale-98"
+                            title="Copy fresh swapped eCash token to clipboard"
+                          >
+                            <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>{copiedId === event.id ? "✓ Copied!" : "📋 Copy Fresh Token"}</span>
+                          </button>
+
+                          {/* Action Button 2 (External Spend Link) */}
+                          <a
+                            href={`https://cashu.me/#token=${encodeURIComponent(claimResult.newToken)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs transition-all shadow-md hover:scale-102 cursor-pointer border border-emerald-400/30"
+                            title="Open and redeem directly in Cashu.me web wallet"
+                          >
+                            <span>↗️ Open in Cashu.me</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+
+                          {/* Action Button 3 (Mobile QR) */}
+                          <button
+                            type="button"
+                            onClick={() => setFreshQrVisibleMap((prev) => ({ ...prev, [event.id]: !prev[event.id] }))}
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-2 font-bold text-xs rounded-xl transition-all cursor-pointer border shadow-sm ${
+                              freshQrVisibleMap[event.id]
+                                ? "bg-purple-900/80 border-purple-500 text-purple-200 shadow-purple-500/20 shadow-md"
+                                : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border-slate-700"
+                            }`}
+                            title="Toggle QR code to scan with Minibits, Macadamia, or Cashu.me mobile wallet"
+                          >
+                            <QrCode className="w-3.5 h-3.5 text-purple-400" />
+                            <span>{freshQrVisibleMap[event.id] ? "✕ Hide QR Code" : "📱 Mobile QR"}</span>
+                          </button>
+                        </div>
+
+                        {/* Action Button 1 Toast / Inline Feedback */}
+                        {copiedId === event.id && copyFeedback && (
+                          <div className="p-2.5 bg-emerald-950/90 border border-emerald-500/60 rounded-xl text-xs text-emerald-300 font-medium flex items-center gap-2 animate-in fade-in duration-200">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <span>{copyFeedback}</span>
+                          </div>
+                        )}
+
+                        {/* Action Button 3 Toggleable QR Code for Fresh Token */}
+                        {freshQrVisibleMap[event.id] && (
+                          <div className="p-4 bg-white rounded-2xl border-2 border-emerald-500 flex flex-col items-center gap-3 relative shadow-xl animate-in fade-in zoom-in-95 duration-200">
+                            <button
+                              type="button"
+                              onClick={() => setFreshQrVisibleMap((prev) => ({ ...prev, [event.id]: false }))}
+                              className="absolute top-2.5 right-2.5 p-1 rounded-full hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                              title="Close QR Code"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                            <div className="p-2 bg-white rounded-xl">
+                              <QRCodeSVG
+                                value={claimResult.newToken}
+                                size={210}
+                                bgColor="#ffffff"
+                                fgColor="#000000"
+                                level="M"
+                                includeMargin={true}
+                              />
+                            </div>
+                            <div className="text-center space-y-1">
+                              <p className="text-xs font-bold text-slate-900 flex items-center justify-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                                Scan with Minibits or Macadamia Mobile
+                              </p>
+                              <p className="text-[11px] text-slate-600 max-w-xs leading-snug">
+                                Point your mobile eCash wallet camera at this QR code to claim your fresh swapped sats directly to your phone.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Educational Double-Spend Security Proof Card */}
-                    {isSpent && (
+                    {isSpent && !claimResult?.success && (
                       <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-slate-200 space-y-2.5 shadow-md">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[11px] font-bold">
@@ -732,12 +846,12 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                       {/* 1. Copy Token Button */}
                       <button
                         type="button"
-                        onClick={() => handleCopyToken(claimResult?.newToken || dec.token, event.id)}
+                        onClick={() => handleCopyToken(claimResult?.newToken || dec.token, event.id, claimResult?.newToken ? "Copied! Ready to paste into Minibits / Cashu.me" : undefined)}
                         className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700"
-                        title="Copy decrypted token to import into Minibits, Macadamia, or Cashu.me"
+                        title={claimResult?.newToken ? "Copy fresh swapped token" : "Copy decrypted token to import into Minibits, Macadamia, or Cashu.me"}
                       >
                         <Copy className="w-3.5 h-3.5 text-purple-400" />
-                        <span>{copiedId === event.id ? "Copied!" : "Copy Token"}</span>
+                        <span>{copiedId === event.id ? "Copied!" : claimResult?.newToken ? "Copy Fresh Token" : "Copy Token"}</span>
                       </button>
 
                       {/* 1.5. QR Code Button */}
@@ -749,19 +863,19 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                             ? "bg-purple-900/60 border-purple-600 text-purple-200"
                             : "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border-slate-700"
                         }`}
-                        title="Show QR code to scan with Minibits, Macadamia, or Cashu.me"
+                        title={claimResult?.newToken ? "Show QR code for fresh swapped token" : "Show QR code to scan with Minibits, Macadamia, or Cashu.me"}
                       >
                         <QrCode className="w-3.5 h-3.5 text-purple-400" />
-                        <span>{qrVisibleMap[event.id] ? "Hide QR" : "📱 QR Code"}</span>
+                        <span>{qrVisibleMap[event.id] ? "Hide QR" : claimResult?.newToken ? "📱 Fresh QR Code" : "📱 QR Code"}</span>
                       </button>
 
                       {/* 2. Verify on Mint Button */}
                       <button
                         type="button"
                         onClick={() => handleVerifyOnMint(event)}
-                        disabled={isVerifying || isSpent}
+                        disabled={isVerifying || isSpent || Boolean(claimResult?.success)}
                         className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700 disabled:opacity-50"
-                        title={isSpent ? "Token already verified as spent on Mint" : "Query Mint node directly to check token spent state"}
+                        title={claimResult?.success ? "Proofs already claimed and swapped into fresh tokens" : isSpent ? "Token already verified as spent on Mint" : "Query Mint node directly to check token spent state"}
                       >
                         <SearchCode className="w-3.5 h-3.5 text-amber-400" />
                         <span>Verify on Mint</span>
@@ -806,10 +920,10 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                         <button
                           type="button"
                           onClick={() => setQrVisibleMap(prev => ({ ...prev, [event.id]: false }))}
-                          className="absolute top-2 right-2 p-1 rounded-full hover:bg-slate-200 transition-colors cursor-pointer"
+                          className="absolute top-2 right-2 p-1 rounded-full hover:bg-slate-200 transition-colors cursor-pointer text-slate-600"
                           title="Close QR"
                         >
-                          <X className="w-4 h-4 text-slate-500" />
+                          <X className="w-4 h-4" />
                         </button>
                         <QRCodeSVG
                           value={claimResult?.newToken || dec.token}
@@ -819,8 +933,10 @@ export default function NutZapInbox({ recipientPubkey, recipientNpub, recipientN
                           level="M"
                           includeMargin={true}
                         />
-                        <p className="text-[11px] text-slate-600 text-center font-medium max-w-[220px] leading-snug">
-                          Scan with Minibits, Macadamia, or Cashu.me to claim directly to mobile
+                        <p className="text-[11px] text-slate-600 text-center font-medium max-w-[240px] leading-snug">
+                          {claimResult?.newToken 
+                            ? "Scan fresh swapped eCash token with Minibits, Macadamia, or Cashu.me"
+                            : "Scan with Minibits, Macadamia, or Cashu.me to claim directly to mobile"}
                         </p>
                       </div>
                     )}
