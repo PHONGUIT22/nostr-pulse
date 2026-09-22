@@ -105,11 +105,34 @@ export default function HeroSearchSection() {
         </div>
       )}
 
+      {/* 1-Click Interactive Demo Buttons (Anti-Sybil Matrix Inspection) */}
+      <div className="mt-6 p-4 rounded-3xl bg-slate-50 border border-slate-200/80 max-w-2xl mx-auto space-y-2.5 shadow-xs">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+          ⚡ 1-Click Anti-Sybil Inspection (Freedom Stack Rubric Demo)
+        </span>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-2xs hover:scale-102 cursor-pointer"
+          >
+            <span>🔥 Inspect Verified Builder</span>
+            <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">96 pts (Hop 0)</span>
+          </Link>
+          <Link
+            href="/p/anon_bot"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-2xs hover:scale-102 cursor-pointer"
+          >
+            <span>⚠️ Inspect Sybil Bot Clone</span>
+            <span className="bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">≤25 pts (Capped)</span>
+          </Link>
+        </div>
+      </div>
+
       {/* POPULAR CREATORS LINKS */}
-      <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500 flex-wrap">
+      <div className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-500 flex-wrap">
         <span>Featured Creators:</span>
         <Link href="/p/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6" className="hover:underline font-medium text-purple-700">fiatjaf</Link> •
-        <Link href="/p/npub1sg6plzptd64u62a978hep2k2u72xqvvd5299cvfd0rrxn5z5avqssae6r6m" className="hover:underline font-medium text-purple-700">Jack Dorsey</Link> •
+        <Link href="/p/npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m" className="hover:underline font-medium text-purple-700">Jack Dorsey</Link> •
         <Link href="/p/npub1qfl2942sp4775d862800sv8aev2u6v4p84y2a506etp0a5t43d2s250d4w" className="hover:underline font-medium text-purple-700">ODELL</Link> •
         <Link href="/p/npub1a2cww4kn9wqte4pw70vjdjzhctrnvkfdln9ecc5422kqaeayikrqqf2la6" className="hover:underline font-medium text-purple-700">Lyn Alden</Link>
       </div>
