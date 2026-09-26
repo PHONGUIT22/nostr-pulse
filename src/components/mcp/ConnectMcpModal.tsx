@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Copy,
@@ -23,6 +23,19 @@ export default function ConnectMcpModal({ isOpen, onClose }: ConnectMcpModalProp
   const [activeTab, setActiveTab] = useState<"claude" | "cursor" | "cli">("cursor");
   const [copiedType, setCopiedType] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const claudeConfig = JSON.stringify(
@@ -30,14 +43,7 @@ export default function ConnectMcpModal({ isOpen, onClose }: ConnectMcpModalProp
       mcpServers: {
         nostrpulse: {
           command: "npx",
-          args: [
-            "-y",
-            "tsx",
-            "D:\\UIT\\NamBonUIT\\nostrpulse-full\\src\\mcp-entry.ts",
-          ],
-          env: {
-            GEMINI_API_KEY: "YOUR_GEMINI_API_KEY_HERE",
-          },
+          args: ["-y", "nostrpulse-mcp"],
         },
       },
     },
@@ -50,7 +56,7 @@ export default function ConnectMcpModal({ isOpen, onClose }: ConnectMcpModalProp
       mcpServers: {
         nostrpulse: {
           command: "npx",
-          args: ["tsx", "src/mcp-entry.ts"],
+          args: ["-y", "nostrpulse-mcp"],
         },
       },
     },
@@ -58,7 +64,7 @@ export default function ConnectMcpModal({ isOpen, onClose }: ConnectMcpModalProp
     2
   );
 
-  const cliCommand = "npx tsx src/mcp-entry.ts";
+  const cliCommand = "npx -y nostrpulse-mcp";
 
   const getActiveCode = () => {
     switch (activeTab) {
@@ -78,33 +84,42 @@ export default function ConnectMcpModal({ isOpen, onClose }: ConnectMcpModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 text-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl relative space-y-6 max-h-[92vh] overflow-y-auto">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-800/60 hover:bg-slate-800 transition-colors cursor-pointer"
-          aria-label="Close modal"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-slate-900 border border-slate-800 text-white w-full max-w-2xl flex flex-col max-h-[85vh] sm:max-h-[88vh] my-auto overflow-hidden rounded-3xl shadow-2xl relative"
+      >
         {/* Modal Header */}
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold text-emerald-400">
-            <Cpu className="w-3.5 h-3.5" />
-            <span>Model Context Protocol (MCP) Server</span>
+        <div className="shrink-0 sticky top-0 bg-slate-900 z-20 border-b border-slate-800 p-6 sm:p-7 flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold text-emerald-400">
+              <Cpu className="w-3.5 h-3.5" />
+              <span>Model Context Protocol (MCP) Server</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+              Connect to <span className="text-emerald-400">Cursor</span> or{" "}
+              <span className="text-purple-400">Claude Desktop</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              Expose NostrPulse as a native stdio MCP tool server. External AI agents
+              can autonomously query Web-of-Trust reputations, send NutZap micro-settlements,
+              and dispatch NIP-90 compute jobs.
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Connect to <span className="text-emerald-400">Cursor</span> or{" "}
-            <span className="text-purple-400">Claude Desktop</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            Expose NostrPulse as a native stdio MCP tool server. External AI agents
-            can autonomously query Web-of-Trust reputations, send NutZap micro-settlements,
-            and dispatch NIP-90 compute jobs.
-          </p>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 transition-colors cursor-pointer shrink-0 mt-0.5"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
+
+        {/* Modal Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-6 sm:p-7 space-y-6">
 
         {/* Client Selection Tabs */}
         <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
@@ -265,6 +280,7 @@ export default function ConnectMcpModal({ isOpen, onClose }: ConnectMcpModalProp
             </>
           )}
         </button>
+        </div>
       </div>
     </div>
   );

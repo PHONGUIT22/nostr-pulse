@@ -13,7 +13,7 @@ export default function ConnectMcpCard() {
       mcpServers: {
         nostrpulse: {
           command: "npx",
-          args: ["tsx", "src/mcp-entry.ts"],
+          args: ["-y", "nostrpulse-mcp"],
         },
       },
     },
