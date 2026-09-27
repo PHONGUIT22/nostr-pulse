@@ -40,9 +40,9 @@
 
 ## 📹 Walkthrough Demo Video
 
-> 📺 **Demo Walkthrough Video (3–5 Minutes):**  
-> **[Watch the NostrPulse Walkthrough on YouTube](https://youtu.be/pWb9w-7-gQ8)** *(Placeholder / Direct MP4 available in project releases)*  
-> *A concise, high-signal walkthrough demonstrating the working product: 1-click Anti-Sybil inspection, NIP-05 DNS verification, in-app testnet eCash minting, the complete 2-way NIP-61 NutZap receiver inbox proof-swap, and autonomous MCP AI agent payment guardrails.*
+> 📺 **Demo Walkthrough Video (4 Minutes):**  
+> **[Watch the NostrPulse Walkthrough on YouTube](https://www.youtube.com/watch?v=1Y2IWNP4KNs)**  
+> *A concise, high-signal walkthrough demonstrating the working product: 1-click Anti-Sybil inspection, NIP-07 Alby login, NIP-05 DNS verification, in-app testnet eCash minting, the complete 2-way NIP-61 NutZap receiver proof-swap, and autonomous MCP AI agent payment guardrails.*
 
 ---
 
@@ -151,6 +151,9 @@ In accordance with Bitshala Hackathon Slide 13 guidelines, we practice **radical
 
 | Limitation / Scoped Feature | Current Behavior | Planned Solution (Post-Hackathon) |
 | :--- | :--- | :--- |
+| **Subjective Web-of-Trust & Anchor Customization** | Utilizes 21 curated protocol founders and NIP authors (`anchors.ts`) as the default global bootstrap seed set for deterministic graph distance calculation. | Implement user-configurable subjective WoT anchor sets, enabling specific developer communities (e.g. Bitshala cohorts, Indian/Vietnamese local dev circles) to declare custom root anchors without centralized bias. |
+| **Testnet Evaluation Environment** | Defaults to public `https://testnut.cashu.space` so judges and reviewers can stress-test the entire dual-rail flow in under 5 minutes without spending real Bitcoin or installing extensions. | 100% compliant with NUT-00 to NUT-07 specifications; supports seamless one-line configuration to production mainnet mints (Minibits, Macadamia) or custom mint URLs via environment variables. |
+| **Visual Sandbox vs Headless Security** | The web UI features an interactive simulation playground (`/agent`) for rapid 5-second judge inspection. | Production headless runtime is strictly enforced at the Model Context Protocol (MCP) Stdio IPC middleware layer via `src/lib/spending-guardrails.ts`, backed by persistent local SQLite audit logging, preventing bypass before transaction signing. |
 | **NUT-11 P2PK Proof Locks** | Proofs are transmitted as encrypted bearer secrets via NIP-44 v2. | Enforce mint-level Pay-to-Public-Key locks once widely deployed on mainnet mint nodes. |
 | **Decentralized Relay Jitter** | Public relays occasionally time out when publishing Kind 9321 events. | Mitigated via concurrent multi-relay broadcast (5+ indexing relays) with local cache reconciliation. |
 | **Testnet Mint Availability** | Live demo defaults to public `https://testnut.cashu.space`. | Provide in-app automated failover to secondary mints (Minibits, Macadamia) upon connection drop. |
