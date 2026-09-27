@@ -41,7 +41,7 @@
 ## 📹 Walkthrough Demo Video
 
 > 📺 **Demo Walkthrough Video (4 Minutes):**  
-> **[Watch the NostrPulse Walkthrough on YouTube](https://www.youtube.com/watch?v=1Y2IWNP4KNs)**  
+> **[Watch the NostrPulse Walkthrough on YouTube](https://www.youtube.com/watch?v=V8iJAnk44bE)**  
 > *A concise, high-signal walkthrough demonstrating the working product: 1-click Anti-Sybil inspection, NIP-07 Alby login, NIP-05 DNS verification, in-app testnet eCash minting, the complete 2-way NIP-61 NutZap receiver proof-swap, and autonomous MCP AI agent payment guardrails.*
 
 ---
