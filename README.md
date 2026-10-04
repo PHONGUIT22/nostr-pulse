@@ -4,7 +4,7 @@
 ### Sovereign Web-of-Trust Graph Engine, Sats-Weighted Anti-Sybil Defense & Full-Cycle Chaumian eCash Protocol Layer
 **Autonomous Payments & Sybil-Resistant Trust Matrix for Humans and AI Agents across the Freedom Stack.**
 
-[![Release: v1.2.0](https://img.shields.io/badge/Release-v1.2.0-2563EB?style=for-the-badge&logo=github)](https://github.com/PHONGUIT22/nostr-pulse/releases)
+[![Release: v1.2.0](https://img.shields.io/badge/Release-v1.2.1-2563EB?style=for-the-badge&logo=github)](https://github.com/PHONGUIT22/nostr-pulse/releases)
 [![npm version](https://img.shields.io/npm/v/nostrpulse-mcp?style=for-the-badge&color=CB3837&logo=npm)](https://www.npmjs.com/package/nostrpulse-mcp)
 [![Track: Freedom Stack](https://img.shields.io/badge/BOSS_Battle-Track_2:_Freedom_Stack-E02424?style=for-the-badge&logo=target)](https://bitshala.org)
 [![Track: Machine Money](https://img.shields.io/badge/BOSS_Battle-Machine_Money-F7931A?style=for-the-badge&logo=bitcoin)](https://bitshala.org)
@@ -57,7 +57,7 @@
 | **Team / Author** | **Nguyen Hac Phong** ([@PHONGUIT22](https://github.com/PHONGUIT22)) — *Solo Entry*<br>• *Role:* Lead Architect, Protocol Engineer & Full-Stack Developer |
 | **Live Production App** | [https://nostr-pulse.vercel.app](https://nostr-pulse.vercel.app) *(Edge CDN deployed)* |
 | **Source Repository** | [https://github.com/PHONGUIT22/nostr-pulse](https://github.com/PHONGUIT22/nostr-pulse) |
-| **NPM Package** | [`nostrpulse-mcp` on npm](https://www.npmjs.com/package/nostrpulse-mcp) *(v1.2.0)* |
+| **NPM Package** | [`nostrpulse-mcp` on npm](https://www.npmjs.com/package/nostrpulse-mcp) *(v1.2.1)* |
 | **License** | Open-source under the [MIT License](LICENSE) |
 
 ---
@@ -135,7 +135,7 @@ In accordance with Bitshala Hackathon Slide 13 guidelines, we practice **radical
 | **Fail-Closed NUT-07 Double-Spend Shield** | **Finished** | Real-time proof-state verification against the mint; converts spent tokens into educational badges without breaking UI state. |
 | **Standalone Embeddable NutZap Widget** | **Finished** | Zero-dependency script and Web Component in [`public/widget.js`](public/widget.js) with Lightning mint quote and proof swap. |
 | **Public Open Trust Score REST API** | **Finished** | CORS-enabled public endpoint at `/api/v1/trust-score/[pubkey]` delivering structured WoT graph and economic stake metrics. |
-| **Model Context Protocol (MCP) Server** | **Finished** | Published npm package (`nostrpulse-mcp` v1.2.0) exposing 10 Stdio JSON-RPC tools for Claude Desktop, Cursor, and Windsurf. |
+| **Model Context Protocol (MCP) Server** | **Finished** | Published npm package (`nostrpulse-mcp` v1.2.1) exposing 10 Stdio JSON-RPC tools for Claude Desktop, Cursor, and Windsurf. |
 | **NIP-47 Nostr Wallet Connect (NWC)** | **Finished** | Autonomous Lightning settlement via Kind 23194/23195 with zero memory-leak lifecycle management. |
 | **WoT-Gated Dynamic Mint Mesh (NUT-06)** | **Finished** | Autonomous Cashu mint health auditor and dynamic router via `auditCashuMint` and `selectBestMint`. |
 | **Autonomous Spending Guardrails** | **Finished** | Rolling 24h budget limits (500 sats), per-tx caps (50 sats), and WoT trust-score gatekeeping (< 40 score blocked). |
@@ -229,7 +229,7 @@ Open **[http://localhost:3000](http://localhost:3000)** to explore the full dash
 # Verify 0 TypeScript errors
 npx tsc --noEmit
 
-# Verify Next.js Turbopack production compilation (all 21 static/dynamic routes)
+# Verify Next.js Turbopack production compilation (all 22+ static/dynamic routes)
 npm run build
 ```
 
@@ -257,6 +257,10 @@ You can evaluate the complete system without installing browser extensions or sp
 3. Obtain a testnet Cashu token via either method:
    - **Method A (In-App 1-Click Mint):** Switch to **1-Click Mint**, select a satoshi amount (e.g. 21 Sats), and settle the testnet invoice.
    - **Method B (Free External Testnet Sats):** Visit [cashu.me](https://cashu.me), set your mint to `https://testnut.cashu.space`, claim free testnet sats, and copy the `cashuB...` or `cashuA...` token.
+   - **Method C (Ready-to-use Demo Testnet Token):** Copy and paste the verified testnet token below directly into the **Paste Token** field (or click *"Load Demo Token"* in the UI):
+     ```text
+     cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcImkYWEEYXN4QDE2ZmQ5ODQ0MjUwYjBlNGJjNTllOTNhZjA0OTFlNDE5NDc3MTFmNDM3NTZjYTZlYTY5NzJlMWIwODgzYzg0Y2VhY1ghA6OPT5nXTYPARNE2S9YBFV0qxIkIyPb-Gcu1D6q46z2VYWSjYWVYIPpxrdSZp3XprmxBSB2wLKYplHibW7uruqHAeAh6bXp2YXNYIFdY5OoAU8u70sKZ7I7bZJFkCky_O35JIsEmr8lm_uh6YXJYIEQp-FbVbiqrgaqHwe8IQktVLhtLEyBNMz_ycPZx_HfupGFhBGFzeEBhNTVkNDAzODYzNzU3MzdlNWY1MGEyYTA4M2IxMDgyZWI1YzI0Nzk0NjE5NmE2M2E4MmYxMzc4MjZiNmViZmJmYWNYIQOsjEaaWjkUHXawuikJ1e20VLFx02eXT_W-0y5DfwiiMWFko2FlWCCAWfOGP-Pe_1WNx6Fb1ampJ7ws94Q-2DSPSUfZSXHoGWFzWCCnmEWs2c4Yr1Xcyon_SSXd5Qj_a1oc2shJWAOInKjCJGFyWCAonk5h0k6YNmjPOpGa2K9WZhMI4ykGN3lNAbo1zo9X3KRhYQRhc3hAOGM3ZmQyNzg5ZWYwOTc4YTJiMDk1ZTQzZDNjNWIwMDZkZmZjMjhlOWM2YWE1YzY5NTU1NzM2OTY2NzY4YTgwNmFjWCECFZ6HmdlqkWBr20eAYXODmxQ1P_B0z7u2FEKhzWBYTCthZKNhZVggellyZBgn8MeKufLhiX52NndrrX2xZhI7rlHNT4PUJqRhc1gg8X16HDzVrgB-xltJ4Y_WgmWkSbaB_blnCrjLuHNUChhhclgg0062-t5yJVPJIdCStmZovlV75wDP7WR-v0nPldclB1ikYWECYXN4QGFhMmZjOTNlYTU2MzVkZTk4OGI0NTczNmM4YjM5MzBiZDg3ZTU2MjUxYzc1ZDhkYWZjNzJlODhiYTQwN2JkMDlhY1ghAqj84zwnhqle_9KJA3YxRISMfYd5QfCfLGmu2UFetvmUYWSjYWVYIL5lzXVxE5zkaj66pD4N2z_d8mQ0hk4vHa5CbQ5CR7QDYXNYIHBfOblu45QuTVZNyrSkxztM9tAXdSdsQ3zcGXwh1RurYXJYIKMqFLdytnIBCnebQS5EgjIVwAH_R7BVUzPqpmufYNptpGFhAmFzeEAxZTMyNzA4MDc2Y2U1YWQwZDVjNDE1YzQyOTkwZDhiZjYzMDBiZGEzMDQyMWEyYWYzODJlYWE0MTQ3ODA0ZjJkYWNYIQJnMVUSP-69NOL_de8wbv0Pluh7BzJlALXLMWhuhAmkEmFko2FlWCC6WS9aYvMyKiWZeDNwRi1faqfHIOBOBkBJN9ZSL8BF32FzWCAqVd31YHUCUJf5S93bXl6g1cm8uCRKg5k4in7wLdlCIGFyWCDB6ZR2HVEY_SlfGVB3xwAlpsCu0sbUgftw07YCL7kpO6RhYQFhc3hAYTViMWYwNzI5YTIxZmYxNGE4Y2MyN2UyMDAxMTZhYTZkZmEyNTUwYTg3ZGJmZjUwYTk5YzMwMDMzYmU3ZTg1ZWFjWCECIanjzb49d267K9GBlk0MaAcdRqWI3FGMqsuH5-EKjwlhZKNhZVggR9Fv6ky5mxlzx2QkC2wTBcTEoFIfc1gKjtpLsLFNy8Zhc1ggfqodaxsbIZlmK0reBTjJj4p5uCI3eDamI1ZSD5wvVbNhclggSfFq1CPOnV8Z2uP1FqAW7NJO0LsFqee4uZ4CU7QmdCqkYWEBYXN4QDVlYWEyNDNkZThkNWYyYTEwNjk3ODk5YWVmMjkyNDljNDZjYzg0ZjljNmQ5NjJmNzNmMjllMzIxN2JiMTkzNmZhY1ghA5umYYT323gkNmf4Sd_jKALJnnQpVSYwE9QcRBzE8D2pYWSjYWVYIDt-KGnQez4KjpCXl8k-_e_T88VDtT3fXGE9sRzc3waCYXNYIDKLQB7DtWwff0-d2r6jaJo_FvXQ1Q-kminxUHOMdRwvYXJYIDWt9KOonvPUNKBBeXmgl0mW-Y3AEekc3lrVrFbAGjjmpGFhAWFzeEA3MjAwZWZiMTNmMzJjMTVlMjE1YWE5ZDdjNDM3OWYzNjAzZTUyMmE3NTZkNzEzZGMzMDI5NzU0ZGEzNTc5MjJiYWNYIQMr0A55vof2JyPlJHXnpit6WHIkRpiDWJq8__Osq19leWFko2FlWCBei4C0F-uf-9oxMidf2agbYFzoyIOHtvBmEEnfYRMMfWFzWCDkXdgJQ_K819kviK-z64xvkUcVPGCjSuN7sjqgMICjVGFyWCB-M2TEjd90WzBHcTVvNt3CZRA27ZYThSQUMXMY_nUkOKRhYQFhc3hAZDAwYTU4NTdkZmY4MzQzMzgyYTc4N2VhODMyMmUwNDk3N2VhYTJkZGRmOWViNmMwMjkxNjE2NjUzYzNhOTMzYmFjWCEDIZ2RPGXXrBsbs2F8kyfmcXZx0OgHVE2foE3bkT5EKLRhZKNhZVggI1H53CtNrTQTPSbqq2DoWnO3YVy_Ky3w1Cays-M23uxhc1ggoJTTEAQrqhYo37MDzTZBOZho3ZUGvm1tyYzgGQtNHl9hclggzvCUKk9plNSmFmjt_RTjXTG5uZ1RXOC9MTFCzOHElso
+     ```
 4. Paste the token into the input box and click **Verify eCash Token**:
    - Watch our zero-dependency RFC 8949 binary CBOR decoder unpack the proofs and verify spend-state directly against the mint (`https://testnut.cashu.space`).
 5. Click **Send Sats (NutZap)**:
@@ -340,6 +344,7 @@ Paste this into your `.cursor/mcp.json` or `claude_desktop_config.json`:
 | `pay_cashu_nutzap` | **Payment Rails (eCash)** | Machine-to-machine (M2M) settlement with Chaumian eCash (NIP-61 NutZap) wrapped in NIP-44 encryption with pre-flight spending guardrails. |
 | `request_nip90_job` | **Decentralized Compute** | Dispatches compute and data-processing tasks to decentralized NIP-90 Data Vending Machines (DVMs) across Nostr relays with local fallback. |
 | `pay_lightning_nwc` | **Payment Rails (Lightning)** | Settle BOLT-11 Lightning invoices through an autonomous node via NIP-47 Nostr Wallet Connect (Alby Hub, Phoenixd, Umbrel). |
+| `pay_with_nwc` | **Payment Rails (Alias)** | Convenience alias for `pay_lightning_nwc` providing seamless backwards compatibility for AI agent prompts. |
 | `audit_cashu_mint` | **Mint Radar** | Audit and evaluate counterparty risk of a Cashu eCash Mint using Web-of-Trust graph distance, NIP-05 domain validation, and operator reputation. |
 | `route_cashu_mint` | **Mint Mesh** | Dynamically discover and route to the highest-trust, lowest-latency Cashu Mint from the WoT-Gated Dynamic Mint Mesh. |
 | `get_agent_identity` | **Zero-Config Identity** | Retrieve active autonomous agent cryptographic identity (`pubkey`, `npub`, source). Automatically bootstraps local keys. |
@@ -423,7 +428,11 @@ nostr-pulse/
 │   │   ├── p/[npub]/page.tsx        # Profile dashboard, Trust Score breakdown, NutZap Inbox
 │   │   ├── bounties/page.tsx        # NIP-90 Open Work & AI DVM Marketplace
 │   │   ├── agent/page.tsx           # Autonomous AI Agent Dashboard
-│   │   ├── compare/page.tsx         # Head-to-Head Creator Versus arena
+│   │   ├── compare/
+│   │   │   ├── page.tsx             # Head-to-Head Creator Versus arena
+│   │   │   └── [pair]/page.tsx      # High-signal comparison detail & thin-content SEO shield
+│   │   ├── sitemap/
+│   │   │   └── [id]/route.ts        # Partitioned dynamic XML sitemap protecting crawl budget
 │   │   ├── relays/page.tsx          # Real-time WebSocket relay latency monitor
 │   │   └── api/
 │   │       ├── badge/[npub]/        # Dynamic SVG reputation badge generator
@@ -459,6 +468,7 @@ nostr-pulse/
 │   │   ├── mint-mesh.ts             # WoT-Gated Dynamic Mint Mesh & NUT-06 health auditor
 │   │   ├── nwc.ts                   # NIP-47 Nostr Wallet Connect client
 │   │   ├── telemetry.ts             # Agent telemetry & security event logger
+│   │   ├── popular-pairs.ts         # Curated comparison pairs whitelist for Technical SEO
 │   │   └── nostr.ts                 # SimplePool relay manager, NIP-19 decoders
 │   └── mcp-entry.ts                 # Stdio Model Context Protocol (MCP) server
 ├── scripts/

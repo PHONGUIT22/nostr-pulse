@@ -31,7 +31,8 @@ import {
   pollMintAndClaimToken,
   RECOMMENDED_MINTS,
   DEFAULT_CASHU_MINT,
-  isValidMintUrl
+  isValidMintUrl,
+  DEMO_TOKEN_POOL
 } from "@/lib/cashu";
 
 interface ZapCardProps {
@@ -839,11 +840,23 @@ export default function LightningZapCard({
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                       Paste Cashu Token (cashuA... or cashuB...)
                     </label>
-                    {verifiedCashuAmount && (
-                      <span className="text-xs font-black text-emerald-400 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" /> {verifiedCashuAmount.toLocaleString()} Sats Verified
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCashuTokenInput(DEMO_TOKEN_POOL[0]);
+                          setVerifiedCashuAmount(null);
+                        }}
+                        className="text-[11px] font-bold text-amber-400 hover:text-amber-300 underline cursor-pointer flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" /> Load Demo Token (Testnut)
+                      </button>
+                      {verifiedCashuAmount && (
+                        <span className="text-xs font-black text-emerald-400 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> {verifiedCashuAmount.toLocaleString()} Sats Verified
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <textarea
                     rows={3}
@@ -852,7 +865,7 @@ export default function LightningZapCard({
                       setCashuTokenInput(e.target.value);
                       setVerifiedCashuAmount(null);
                     }}
-                    placeholder="cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vbWludC5taW5pYml0cy5jYXNoL0JpdGNvaW4iLCJwcm9vZnMiOlt7ImFtb3VudCI6MTAwLCJpZCI6... "
+                    placeholder="cashuBo2FteBtodHRwczovL3Rlc3RudXQuY2FzaHUuc3BhY2VhdWNzYXRhdIGiYWlIAYQjfmPONCNhcImkYWEEYXN4QDE2ZmQ5ODQ0MjUwYjBlNGJjNTllOTNhZjA0OTFlNDE5NDc3MTFmNDM3NTZjYTZlYTY5NzJlMWIwODgzYzg0Y2VhY1ghA6OPT5nXTYPARNE2S9YBFV0qxIkIyPb-Gcu1D6q46z2VYWSjYWVYIPpxrdSZp3XprmxBSB2wLKYplHibW7uruqHAeAh6bXp2YXNYIFdY5OoAU8u70sKZ7I7bZJFkCky_O35JIsEmr8lm_uh6YXJYIEQp-FbVbiqrgaqHwe8IQktVLhtLEyBNMz_ycPZx_HfupGFhBGFzeEBhNTVkNDAzODYzNzU3MzdlNWY1MGEyYTA4M2IxMDgyZWI1YzI0Nzk0NjE5NmE2M2E4MmYxMzc4MjZiNmViZmJmYWNYIQOsjEaaWjkUHXawuikJ1e20VLFx02eXT_W-0y5DfwiiMWFko2FlWCCAWfOGP-Pe_1WNx6Fb1ampJ7ws94Q-2DSPSUfZSXHoGWFzWCCnmEWs2c4Yr1Xcyon_SSXd5Qj_a1oc2shJWAOInKjCJGFyWCAonk5h0k6YNmjPOpGa2K9WZhMI4ykGN3lNAbo1zo9X3KRhYQRhc3hAOGM3ZmQyNzg5ZWYwOTc4YTJiMDk1ZTQzZDNjNWIwMDZkZmZjMjhlOWM2YWE1YzY5NTU1NzM2OTY2NzY4YTgwNmFjWCECFZ6HmdlqkWBr20eAYXODmxQ1P_B0z7u2FEKhzWBYTCthZKNhZVggellyZBgn8MeKufLhiX52NndrrX2xZhI7rlHNT4PUJqRhc1gg8X16HDzVrgB-xltJ4Y_WgmWkSbaB_blnCrjLuHNUChhhclgg0062-t5yJVPJIdCStmZovlV75wDP7WR-v0nPldclB1ikYWECYXN4QGFhMmZjOTNlYTU2MzVkZTk4OGI0NTczNmM4YjM5MzBiZDg3ZTU2MjUxYzc1ZDhkYWZjNzJlODhiYTQwN2JkMDlhY1ghAqj84zwnhqle_9KJA3YxRISMfYd5QfCfLGmu2UFetvmUYWSjYWVYIL5lzXVxE5zkaj66pD4N2z_d8mQ0hk4vHa5CbQ5CR7QDYXNYIHBfOblu45QuTVZNyrSkxztM9tAXdSdsQ3zcGXwh1RurYXJYIKMqFLdytnIBCnebQS5EgjIVwAH_R7BVUzPqpmufYNptpGFhAmFzeEAxZTMyNzA4MDc2Y2U1YWQwZDVjNDE1YzQyOTkwZDhiZjYzMDBiZGEzMDQyMWEyYWYzODJlYWE0MTQ3ODA0ZjJkYWNYIQJnMVUSP-69NOL_de8wbv0Pluh7BzJlALXLMWhuhAmkEmFko2FlWCC6WS9aYvMyKiWZeDNwRi1faqfHIOBOBkBJN9ZSL8BF32FzWCAqVd31YHUCUJf5S93bXl6g1cm8uCRKg5k4in7wLdlCIGFyWCDB6ZR2HVEY_SlfGVB3xwAlpsCu0sbUgftw07YCL7kpO6RhYQFhc3hAYTViMWYwNzI5YTIxZmYxNGE4Y2MyN2UyMDAxMTZhYTZkZmEyNTUwYTg3ZGJmZjUwYTk5YzMwMDMzYmU3ZTg1ZWFjWCECIanjzb49d267K9GBlk0MaAcdRqWI3FGMqsuH5-EKjwlhZKNhZVggR9Fv6ky5mxlzx2QkC2wTBcTEoFIfc1gKjtpLsLFNy8Zhc1ggfqodaxsbIZlmK0reBTjJj4p5uCI3eDamI1ZSD5wvVbNhclggSfFq1CPOnV8Z2uP1FqAW7NJO0LsFqee4uZ4CU7QmdCqkYWEBYXN4QDVlYWEyNDNkZThkNWYyYTEwNjk3ODk5YWVmMjkyNDljNDZjYzg0ZjljNmQ5NjJmNzNmMjllMzIxN2JiMTkzNmZhY1ghA5umYYT323gkNmf4Sd_jKALJnnQpVSYwE9QcRBzE8D2pYWSjYWVYIDt-KGnQez4KjpCXl8k-_e_T88VDtT3fXGE9sRzc3waCYXNYIDKLQB7DtWwff0-d2r6jaJo_FvXQ1Q-kminxUHOMdRwvYXJYIDWt9KOonvPUNKBBeXmgl0mW-Y3AEekc3lrVrFbAGjjmpGFhAWFzeEA3MjAwZWZiMTNmMzJjMTVlMjE1YWE5ZDdjNDM3OWYzNjAzZTUyMmE3NTZkNzEzZGMzMDI5NzU0ZGEzNTc5MjJiYWNYIQMr0A55vof2JyPlJHXnpit6WHIkRpiDWJq8__Osq19leWFko2FlWCBei4C0F-uf-9oxMidf2agbYFzoyIOHtvBmEEnfYRMMfWFzWCDkXdgJQ_K819kviK-z64xvkUcVPGCjSuN7sjqgMICjVGFyWCB-M2TEjd90WzBHcTVvNt3CZRA27ZYThSQUMXMY_nUkOKRhYQFhc3hAZDAwYTU4NTdkZmY4MzQzMzgyYTc4N2VhODMyMmUwNDk3N2VhYTJkZGRmOWViNmMwMjkxNjE2NjUzYzNhOTMzYmFjWCEDIZ2RPGXXrBsbs2F8kyfmcXZx0OgHVE2foE3bkT5EKLRhZKNhZVggI1H53CtNrTQTPSbqq2DoWnO3YVy_Ky3w1Cays-M23uxhc1ggoJTTEAQrqhYo37MDzTZBOZho3ZUGvm1tyYzgGQtNHl9hclggzvCUKk9plNSmFmjt_RTjXTG5uZ1RXOC9MTFCzOHElso"
                     className="w-full bg-slate-800 border border-slate-700 rounded-2xl p-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition-colors text-xs font-mono break-all"
                   />
                 </div>
